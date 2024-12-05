@@ -1,4 +1,4 @@
-![Government Assistant Logo](https://github.com/nesistor/GovGiggler/Groky.png)
+![Government Assistant Logo](https://github.com/nesistor/GovGiggler/blob/main/Groky.png)
 
 # GovGiggler: A Smart Government Assistant
 
