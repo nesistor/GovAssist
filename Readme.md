@@ -51,6 +51,18 @@ A unified interface for seamless interaction with backend services.
 
 ---
 
+## 🌍 **Scope of Features and Implementation**
+
+### **CivicGroK vs GovGiggler: Feature Scope**
+- **CivicGroK** has a broader mention of some additional features, such as **Smart Complaint Resolution**, **Data-Driven Policy Insights**, and **Real-World Relevance**, which are less explicitly discussed in GovGiggler’s documentation but could fit into future phases of GovGiggler’s roadmap.
+  
+- **GovGiggler** highlights **real-time data integration** for **appointments and document requirements** more explicitly. These features enable instant information about service availability and streamline user interactions with government systems.
+
+### **Implementation Stages**
+- **CivicGroK** outlines **prototype development** and **testing phases** more explicitly, while **GovGiggler** focuses more on **long-term scalability** and integration across various government systems.
+
+---
+
 ## 🔒 **Scalability and Security**
 
 - **Scalable Architecture**: Services are modular, allowing independent scaling.
