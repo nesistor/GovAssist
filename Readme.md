@@ -1,3 +1,5 @@
+![Government Assistant Logo](https://github.com/nesistor/GovGiggler/Groky.png?raw=true)
+
 # GovGiggler: A Smart Government Assistant
 
 GovGiggler is an innovative platform designed to bridge the gap between citizens and government services. It provides a user-friendly chatbot-driven interface that simplifies access to government information, service requirements, and appointment scheduling. The project is designed with scalability and modularity in mind, allowing for seamless integration with government systems and automated workflows.
