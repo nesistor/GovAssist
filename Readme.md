@@ -104,12 +104,32 @@ For enhancing user interactions and providing real-time conversational support, 
 
 ## 🤝 **Contributing**
 
-We welcome contributions to GovGiggler! Please follow these steps:
-1. Fork the repository.
-2. Create a new branch (`feature/your-feature`).
-3. Commit your changes and push to the branch.
-4. Submit a pull request.
+We welcome contributions to **GovGiggler**! Please follow these steps:
 
+1. **Fork** the repository by clicking the "Fork" button in the top-right corner of this page.
+
+2. **Clone** the forked repository to your local machine:
+   ```bash
+   git clone https://github.com/nesistor/GovGiggler.git
+   ```
+
+3. **Create a new branch** for your feature:
+   ```bash
+   git checkout -b feature/your-feature
+   ```
+
+4. **Make your changes** and commit them:
+   ```bash
+   git add .
+   git commit -m "Add your feature description"
+   ```
+
+5. **Push the changes** to your forked repository:
+   ```bash
+   git push origin feature/your-feature
+   ```
+
+6. **Open a Pull Request (PR)** in the original repository.
 ---
 
 ## 📄 **License**
