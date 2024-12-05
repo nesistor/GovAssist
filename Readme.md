@@ -8,7 +8,7 @@ GovGiggler is an innovative platform designed to bridge the gap between citizens
 
 ## 🚀 **Project Vision**
 
-The ultimate goal of Govgiggler is to become the go-to assistant for civic needs, offering:
+The ultimate goal of **GovGiggler** is to become the go-to assistant for civic needs, offering:
 
 - **Integration with Government Systems**: Automate processes and provide accurate, real-time information by connecting to various government APIs.
 - **User-Friendly Automation**: Simplify complex workflows such as document submission and appointment scheduling.
