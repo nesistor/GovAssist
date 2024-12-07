@@ -1,7 +1,7 @@
 fastapi==0.95.2
-pymongo==4.5.0
-uvicorn==0.23.2
-pydantic==1.10.12
-openai==0.27.8
-langchain==0.0.283
+uvicorn==0.22.0
+pymongo==4.4.0
+openai==0.27.0
+langchain==0.0.164
+pydantic==1.10.7
 python-dotenv==1.0.0
