@@ -102,25 +102,46 @@ def generate_response_from_grok(context: str, question: str) -> str:
 async def generate_response(request: QuestionRequest):
     """
     Generates a response to the user's question based on ministry-related documents.
+    The system automatically identifies the relevant ministry if not explicitly provided.
     """
-    if not request.ministry_name:
-        raise HTTPException(status_code=400, detail="Ministry name is required.")
+    # Fetch all ministries and their associated data
+    ministries = list(db.ministries.find())
+    if not ministries:
+        raise HTTPException(status_code=404, detail="No ministries found in the database.")
 
-    # Retrieve documents associated with the ministry
-    ministry = db.ministries.find_one({"name": request.ministry_name})
-    if not ministry:
-        raise HTTPException(status_code=404, detail="Ministry not found.")
+    # Retrieve all documents and group them by ministry
+    all_documents = list(db.documents.find())
+    ministry_contexts = {}
+    for ministry in ministries:
+        ministry_id = str(ministry["_id"])
+        ministry_documents = [
+            doc["content"] for doc in all_documents if doc["ministry_id"] == ministry_id
+        ]
+        if ministry_documents:
+            ministry_contexts[ministry["name"]] = "\n".join(ministry_documents)
 
-    documents = db.documents.find({"ministry_id": str(ministry["_id"])})
-    context = "\n".join(doc["content"] for doc in documents)
+    if not ministry_contexts:
+        raise HTTPException(status_code=404, detail="No documents found for any ministry.")
 
-    if not context:
-        raise HTTPException(status_code=404, detail="No documents found for this ministry.")
-
-    # Generate response
+    # Generate Grok's understanding of the relevant ministry
+    combined_context = "\n\n".join(
+        f"Ministry: {name}\nDocuments:\n{context}"
+        for name, context in ministry_contexts.items()
+    )
     try:
-        answer = generate_response_from_grok(context, request.question)
-        return {"ministry_name": request.ministry_name, "answer": answer}
+        llm = LangChainOpenAI(openai_api_key=XAI_API_KEY)
+        template = (
+            "Below is a combined context of various ministries and their documents:\n{context}\n\n"
+            "Question: {question}\n\n"
+            "Identify the most relevant ministry and provide an answer to the question based on the documents."
+        )
+        prompt = PromptTemplate(template=template, input_variables=["context", "question"])
+        chain = LLMChain(llm=llm, prompt=prompt)
+
+        # Run the chain to generate a response
+        grok_response = chain.run({"context": combined_context, "question": request.question})
+
+        return {"answer": grok_response}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error generating response: {str(e)}")
 
