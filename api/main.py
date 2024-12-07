@@ -1,162 +1,130 @@
 import os
-from fastapi import FastAPI, HTTPException, UploadFile, Form, Query
-from fastapi.responses import JSONResponse
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi import FastAPI, HTTPException, Body
 from pydantic import BaseModel, Field
+from pymongo import MongoClient
+from bson import ObjectId
 from typing import List, Optional
-from datetime import datetime, timedelta
+from datetime import datetime
 from openai import OpenAI
+from langchain.prompts import PromptTemplate
+from langchain.chains import LLMChain
+from langchain.llms import OpenAI as LangChainOpenAI
 
-# Initialize FastAPI application
-app = FastAPI(title="GovGiggler - Smart Government Assistant", version="1.0.0")
+# FastAPI application initialization
+app = FastAPI(title="Government Assistant API")
 
-# CORS Middleware
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# MongoDB connection
+MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017/")
+client = MongoClient(MONGO_URI)
+db = client["government_data"]
 
-# Initialize OpenAI client
+# OpenAI client initialization
 XAI_API_KEY = os.getenv("XAI_API_KEY")
-client = OpenAI(
-    api_key=XAI_API_KEY,
-    base_url="https://api.x.ai/v1",
-)
+openai_client = OpenAI(api_key=XAI_API_KEY)
 
-# Storage for documents and appointments
-documents = []
-appointments = []
-
-# Data Models
-class AskRequest(BaseModel):
-    question: str
-
-class Appointment(BaseModel):
+# Data models
+class Ministry(BaseModel):
     name: str
-    service: str
-    date: datetime
+    description: Optional[str] = None
 
-class DocumentRequirementsRequest(BaseModel):
-    service: str
+class Document(BaseModel):
+    ministry_id: str
+    title: str
+    content: str
 
-class Feedback(BaseModel):
-    user: str
-    feedback: str
-    rating: int = Field(..., ge=1, le=5)
+class Localization(BaseModel):
+    ministry_id: str
+    address: str
+    city: str
+    contact: Optional[str] = None
 
-class MinistryLocationRequest(BaseModel):
-    ministry: str
+class Policy(BaseModel):
+    ministry_id: str
+    title: str
+    description: str
 
-# Endpoint for uploading documents
-@app.post("/upload")
-async def upload_document(file: UploadFile):
+class QuestionRequest(BaseModel):
+    question: str
+    ministry_name: Optional[str] = None
+
+# CRUD endpoints
+@app.post("/add-ministry")
+async def add_ministry(ministry: Ministry):
     """
-    Endpoint for uploading documents.
-    Supports plain text and PDF formats.
+    Adds a new ministry to the database.
     """
-    if file.content_type not in ["text/plain", "application/pdf"]:
-        raise HTTPException(status_code=400, detail="Only plain text and PDF files are supported.")
+    ministry_dict = ministry.dict()
+    result = db.ministries.insert_one(ministry_dict)
+    return {"message": "Ministry added successfully.", "id": str(result.inserted_id)}
 
-    content = await file.read()
-    documents.append({"filename": file.filename, "content": content.decode("utf-8")})
-    return {"message": "Document uploaded successfully.", "filename": file.filename}
-
-# Endpoint for asking questions
-@app.post("/ask")
-async def ask_question(request: AskRequest):
+@app.post("/add-documents")
+async def add_documents(documents: List[Document]):
     """
-    Endpoint for asking questions.
-    Uses previously uploaded documents for context.
+    Adds documents related to a ministry.
     """
-    if not documents:
-        raise HTTPException(status_code=400, detail="No documents uploaded. Please upload documents first.")
+    documents_list = [doc.dict() for doc in documents]
+    result = db.documents.insert_many(documents_list)
+    return {"message": "Documents added successfully.", "inserted_ids": [str(id) for id in result.inserted_ids]}
 
-    # Combine all uploaded documents into a single context
+@app.post("/add-localization")
+async def add_localization(localization: Localization):
+    """
+    Adds a location for a ministry.
+    """
+    localization_dict = localization.dict()
+    result = db.localizations.insert_one(localization_dict)
+    return {"message": "Localization added successfully.", "id": str(result.inserted_id)}
+
+@app.post("/add-policy")
+async def add_policy(policy: Policy):
+    """
+    Adds a policy related to a ministry.
+    """
+    policy_dict = policy.dict()
+    result = db.policies.insert_one(policy_dict)
+    return {"message": "Policy added successfully.", "id": str(result.inserted_id)}
+
+# Helper function for generating responses
+def generate_response_from_grok(context: str, question: str) -> str:
+    """
+    Generates a response using LangChain and Grok.
+    """
+    llm = LangChainOpenAI(openai_api_key=XAI_API_KEY)
+    template = (
+        "You are an expert in government policies. Here is the context:\n{context}\n"
+        "Answer the following question based on this information:\n{question}"
+    )
+    prompt = PromptTemplate(template=template, input_variables=["context", "question"])
+    chain = LLMChain(llm=llm, prompt=prompt)
+    return chain.run({"context": context, "question": question})
+
+@app.post("/generate-response")
+async def generate_response(request: QuestionRequest):
+    """
+    Generates a response to the user's question based on ministry-related documents.
+    """
+    if not request.ministry_name:
+        raise HTTPException(status_code=400, detail="Ministry name is required.")
+
+    # Retrieve documents associated with the ministry
+    ministry = db.ministries.find_one({"name": request.ministry_name})
+    if not ministry:
+        raise HTTPException(status_code=404, detail="Ministry not found.")
+
+    documents = db.documents.find({"ministry_id": str(ministry["_id"])})
     context = "\n".join(doc["content"] for doc in documents)
 
-    # Send the question to the Grok AI model
+    if not context:
+        raise HTTPException(status_code=404, detail="No documents found for this ministry.")
+
+    # Generate response
     try:
-        completion = client.chat.completions.create(
-            model="grok-beta",
-            messages=[
-                {"role": "system", "content": "You are Grok, a chatbot inspired by the Hitchhiker's Guide to the Galaxy."},
-                {"role": "user", "content": f"Context: {context}"},
-                {"role": "user", "content": request.question},
-            ],
-        )
-        response = completion.choices[0].message.content
+        answer = generate_response_from_grok(context, request.question)
+        return {"ministry_name": request.ministry_name, "answer": answer}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error communicating with the AI: {str(e)}")
-
-    return {"answer": response}
-
-# Endpoint for retrieving document requirements
-@app.post("/document-requirements")
-async def get_document_requirements(request: DocumentRequirementsRequest):
-    """
-    Endpoint for retrieving document requirements for a specific service.
-    """
-    # Mock document requirements
-    mock_requirements = {
-        "passport renewal": ["Application form", "Old passport", "Two passport-sized photos"],
-        "driver's license renewal": ["ID card", "Old driver's license", "Medical certificate"],
-    }
-
-    requirements = mock_requirements.get(request.service.lower())
-    if not requirements:
-        raise HTTPException(status_code=404, detail="No requirements found for the specified service.")
-
-    return {"service": request.service, "requirements": requirements}
-
-# Endpoint for scheduling an appointment
-@app.post("/schedule-appointment")
-async def schedule_appointment(appointment: Appointment):
-    """
-    Endpoint for scheduling an appointment.
-    """
-    if appointment.date < datetime.now():
-        raise HTTPException(status_code=400, detail="Appointment date must be in the future.")
-
-    appointments.append(appointment)
-    return {"message": "Appointment scheduled successfully.", "appointment": appointment}
-
-# Endpoint for submitting feedback
-@app.post("/feedback")
-async def submit_feedback(feedback: Feedback):
-    """
-    Endpoint for submitting user feedback.
-    """
-    # Feedback can be logged or saved in a database
-    return {"message": "Feedback submitted successfully.", "feedback": feedback}
-
-# Endpoint for retrieving ministry locations
-@app.post("/ministry-location")
-async def get_ministry_location(request: MinistryLocationRequest):
-    """
-    Endpoint for retrieving the location of a specified ministry.
-    """
-    # Mock ministry locations
-    mock_locations = {
-        "ministry of health": "123 Wellness Street, Capital City",
-        "ministry of transport": "456 Mobility Avenue, Capital City",
-    }
-
-    location = mock_locations.get(request.ministry.lower())
-    if not location:
-        raise HTTPException(status_code=404, detail="No location found for the specified ministry.")
-
-    return {"ministry": request.ministry, "location": location}
+        raise HTTPException(status_code=500, detail=f"Error generating response: {str(e)}")
 
 # Test endpoint
 @app.get("/")
 def read_root():
-    """
-    Test endpoint for the application.
-    """
-    return {
-        "message": "Welcome to GovGiggler - Your Smart Government Assistant!",
-        "docs_url": "/docs",
-    }
+    return {"message": "Welcome to the Government Assistant API!"}
