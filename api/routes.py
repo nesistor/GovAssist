@@ -5,7 +5,7 @@ from utils.image_utils import encode_image_to_base64, convert_pdf_to_images, pil
 import os
 from openai import OpenAI
 
-XAI_API_KEY = os.getenv("XAI_API_KEY")  
+XAI_API_KEY = 'xai-vgDNvrhrrkXzXlVbSDef3NEmJqUCZrKlRUkfagFQ36ayBvbhFSVaMTSO8Xq30TulCIjgwzkxqisHPbK7' 
 VISION_MODEL_NAME = "grok-vision-beta" 
 CHAT_MODEL_NAME = "grok-beta"  
 
@@ -97,16 +97,40 @@ def process_image_with_grok(base64_image: str) -> dict:
 def analyze_document_results(results: List[dict]) -> DocumentCheckResult:
     """
     Analyzes the results from the vision model and checks for missing required fields.
+
+    Args:
+        results (List[dict]): A list of dictionaries containing the analyzed fields from the vision model.
+    
+    Returns:
+        DocumentCheckResult: The analysis results indicating validity, missing fields, and errors.
     """
     required_fields = ["Name", "Date of Birth", "Document Number", "Expiration Date"]
     missing_fields = []
     errors = []
+
+    # Validate input structure
+    if not isinstance(results, list):
+        errors.append("Invalid input: 'results' must be a list.")
+        return DocumentCheckResult(is_valid=False, missing_fields=required_fields, errors=errors)
     
+    if not results:  # Check for empty results
+        missing_fields.extend(required_fields)
+        return DocumentCheckResult(is_valid=False, missing_fields=missing_fields, errors=errors)
+
+    if not all(isinstance(result, dict) for result in results):
+        errors.append("Invalid input: All items in 'results' must be dictionaries.")
+        return DocumentCheckResult(is_valid=False, missing_fields=required_fields, errors=errors)
+
+    # Check for missing required fields in the results
     for field in required_fields:
-        if not any(field in result["content"] for result in results if "content" in result):
+        field_found = any(
+            field.lower() in result.get("content", "").lower() for result in results if "content" in result
+        )
+        if not field_found:
             missing_fields.append(field)
 
     is_valid = len(missing_fields) == 0
+
     return DocumentCheckResult(is_valid=is_valid, missing_fields=missing_fields, errors=errors)
 
 @router.post("/generate-response", response_model=List[str])
