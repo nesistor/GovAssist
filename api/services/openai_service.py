@@ -12,6 +12,33 @@ client = OpenAI(api_key=XAI_API_KEY, base_url="https://api.x.ai/v1")
 
 logger = logging.getLogger(__name__)
 
+DOCUMENTS_DB_OLD = {
+    "driver_license_application": {
+        "document_name": "Driver's License Application Form",
+        "url": "https://www.dps.texas.gov/internetforms/forms/dl-14a.pdf"
+    },
+}
+
+DOCUMENTS_DB = {
+    "dmv": [
+        {"document_name": "Driver's License Application", "url": "http://example.com/dmv_license"},
+        {"document_name": "Vehicle Registration Form", "url": "http://example.com/dmv_registration"}
+    ],
+    "health": [
+        {"document_name": "Healthcare Application Form", "url": "http://example.com/health_application"},
+        {"document_name": "Insurance Claim Form", "url": "http://example.com/health_claim"}
+    ],
+    "education": [
+        {"document_name": "Scholarship Application", "url": "http://example.com/scholarship_application"},
+        {"document_name": "Student Loan Form", "url": "http://example.com/student_loan"}
+    ],
+    "tax": [
+        {"document_name": "Tax Filing Form", "url": "http://example.com/tax_filing"},
+        {"document_name": "Tax Refund Application", "url": "http://example.com/tax_refund"}
+    ],
+}
+
+
 def process_image_with_grok(base64_image: str) -> dict:
     try:
         logger.debug("Sending request to Grok Vision model.")
@@ -121,7 +148,7 @@ def process_document_with_text_model(aggregated_results: list) -> dict:
         raise HTTPException(status_code=500, detail=f"Error processing document: {str(e)}")
 
 
-def generate_response(request: dict) -> str:
+def generate_response_old(request: dict) -> str:
     """
     Generates a response based on the user's request and interaction.
     """
@@ -179,6 +206,85 @@ def generate_response(request: dict) -> str:
 
         # Extract and process the final response content
         final_answer = final_response.choices[0].message.content
+        return final_answer
+
+    except Exception as e:
+        logger.error(f"Error generating response: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error processing the request: {str(e)}")
+
+
+def generate_response(request: dict) -> str:
+    """
+    Generates a response based on the user's request and interaction.
+    Includes support for various ministries.
+    """
+    ministry_id = request.get("ministry_id", "general")  # Default ministry if not provided
+    base_messages = [
+        {
+            "role": "system",
+            "content": "You are a friendly and helpful assistant with expertise in various government services. "
+                       "I can help with DMV, Health, Education, and Tax-related queries. "
+                       "My goal is to simplify processes and make things clear with a little bit of humor along the way."
+        }
+    ]
+    
+    base_messages.append({"role": "user", "content": request['question']})
+
+    try:
+        # Check the ministry and modify content accordingly
+        if ministry_id == "dmv":
+            base_messages[0]["content"] += " I am an expert in DMV services like driver's license and vehicle registration."
+        elif ministry_id == "health":
+            base_messages[0]["content"] += " I can assist with health-related services, including applications and insurance."
+        elif ministry_id == "education":
+            base_messages[0]["content"] += " I can guide you through the educational services like scholarships and student loans."
+        elif ministry_id == "tax":
+            base_messages[0]["content"] += " I can help you with tax filing, refunds, and other financial matters."
+        else:
+            base_messages[0]["content"] += " I can help with general government services."
+
+        # Initial API call to generate the response
+        response = client.chat.completions.create(
+            model=CHAT_MODEL_NAME,
+            messages=base_messages,
+        )
+
+        # Extract the first response from the chat model
+        initial_message = response.choices[0].message
+
+        # Check if documents are needed
+        requires_document = any(keyword in request['question'].lower() for keyword in ["form", "document", "application", "download"])
+
+        # Prepare document links for all ministries
+        document_links_html = ""
+        if requires_document and ministry_id in DOCUMENTS_DB:
+            for doc_info in DOCUMENTS_DB[ministry_id]:
+                document_links_html += f'<p><a href="{doc_info["url"]}" download="{doc_info["document_name"]}">{doc_info["document_name"]}</a></p>'
+
+        # Handle responses based on ministry and user query
+        if requires_document:
+            grok_response = (
+                f"It seems like you need some official documents. Here are the relevant documents: "
+                f"{document_links_html} Let me know if you need help filling them out!"
+            )
+        else:
+            grok_response = f"Great question! Here's what I found: {initial_message.content}"
+
+        # Create follow-up messages and final response
+        follow_up_messages = base_messages + [initial_message, {"role": "assistant", "content": grok_response}]
+
+        # Make the second API call to refine or extend the response
+        final_response = client.chat.completions.create(
+            model=CHAT_MODEL_NAME,
+            messages=follow_up_messages,
+        )
+
+        final_answer = final_response.choices[0].message.content
+
+        # Ministry redirection logic
+        if "other ministry" in request['question'].lower():
+            return "It seems you need help with another ministry. Let me redirect you to the main government assistant, who can help with any other queries."
+
         return final_answer
 
     except Exception as e:

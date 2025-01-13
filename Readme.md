@@ -1,8 +1,8 @@
 ![Government Assistant Logo](https://github.com/nesistor/GovGiggler/blob/main/Groky.png)
 
-# GovLinker: A Smart Government Assistant Powered by Grok AI
+# GovAssist: A Smart Government Assistant Powered by Grok AI
 
-**GovLinker** is an innovative platform designed to revolutionize how citizens and businesses interact with government services. By leveraging the advanced capabilities of **Grok AI**, this application streamlines bureaucracy, provides intelligent support, and helps users navigate the complexities of government processes with ease.
+**GovAssist** is an innovative platform designed to revolutionize how citizens and businesses interact with government services. By leveraging the advanced capabilities of **Grok AI**, this application streamlines bureaucracy, provides intelligent support, and helps users navigate the complexities of government processes with ease.
 
 ### **Check it out:**  
 🔗 **[Project Demo](https://flutter-web-app-183025368636.us-central1.run.app/)** <br>  
@@ -23,7 +23,7 @@
 - **Accurate**: Ensures error-free submissions through advanced AI checks.
 - **Engaging**: Offers entertaining problem-solving with jokes, emojis, and a friendly interface.
 
-Whether it’s booking appointments, verifying identity, or solving problems during document submission, **GovLinker** is your ultimate government assistant.
+Whether it’s booking appointments, verifying identity, or solving problems during document submission, **GovAssist** is your ultimate government assistant.
 
 ---
 
@@ -154,7 +154,7 @@ This project is licensed under the MIT License. See the LICENSE file for details
 If you prefer to donate via cryptocurrency, here is our wallet address:
 
 
-**Ethereum (ETH):**
+**Ethereum (Erc-20 and BEP-20):**
 `0x97aE86a5e4b434ec0bEd6A82EE2A079C938886dA`
 
 Thank you for your support!

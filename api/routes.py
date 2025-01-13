@@ -18,6 +18,21 @@ DOCUMENTS_DB = {
     },
 }
 
+@router.get("/initial-message", response_model=str)
+def initial_message():
+    """
+    Endpoint to provide an initial greeting message to the user.
+    """
+    return "Hi there! Welcome to the Gov Assistant. How can I help you today?"
+
+@router.get("/options", response_model=List[str])
+def get_options():
+    """
+    Endpoint to provide predefined options for the user.
+    """
+    options = ["Drivers License", "ID", "Passport", "Something Else"]
+    return options
+
 # API endpoint for document validation
 @router.post("/validate-document")
 async def validate_document(file: UploadFile):

@@ -8,12 +8,15 @@ import '../models/models.dart';
 
 class ApiProvider with ChangeNotifier {
   final List<Message> _messages = [];
+  bool _isLoading = false;
 
   List<Message> get messages => _messages;
+  bool get isLoading => _isLoading;
 
   Future<void> generateResponse(String question) async {
     var url = Uri.parse('https://government-assistant-api-183025368636.us-central1.run.app/generate-response');
     try {
+      _setLoading(true);
       _addMessage(Message(message: question, isUserMessage: true));
 
       var response = await http.post(
@@ -42,12 +45,15 @@ class ApiProvider with ChangeNotifier {
         message: 'Error: $e',
         isUserMessage: false,
       ));
+    } finally {
+      _setLoading(false);
     }
   }
 
   Future<void> uploadDocument(Uint8List fileBytes, String fileName) async {
     var url = Uri.parse('https://government-assistant-api-183025368636.us-central1.run.app/validate-document');
     try {
+      _setLoading(true);
       _addMessage(Message(
         message: 'Uploading document...',
         isUserMessage: true,
@@ -97,6 +103,8 @@ class ApiProvider with ChangeNotifier {
         message: 'Error occurred: $e',
         isUserMessage: false,
       ));
+    } finally {
+      _setLoading(false);
     }
   }
 
@@ -105,14 +113,17 @@ class ApiProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  // Metoda do wykrywania typu MIME
+  void _setLoading(bool isLoading) {
+    _isLoading = isLoading;
+    notifyListeners();
+  }
+
   String _detectMimeType(String fileName) {
     if (fileName.endsWith('.pdf')) {
       return 'application/pdf';
     } else if (fileName.endsWith('.docx')) {
       return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
     } else {
-      // Logowanie błędu, gdy typ MIME nie jest rozpoznany
       print('Unsupported file type: $fileName');
       throw Exception('Unsupported file type. Only PDF and DOCX are allowed.');
     }
