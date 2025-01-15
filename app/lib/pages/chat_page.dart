@@ -13,7 +13,7 @@ class ChatPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          'Govgiggler',
+          'GovAssist',
           style: TextStyle(
             color: Colors.white, 
             fontWeight: FontWeight.bold,
