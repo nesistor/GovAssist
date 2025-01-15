@@ -49,7 +49,7 @@ class ButtonRow extends StatelessWidget {
           ),
           const SizedBox(width: 10),
           ElevatedButton(
-            onPressed: () => onButtonPressed("Something Else"),
+            onPressed: () => onButtonPressed("Social Benefits"),
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.grey[800],
               shape: RoundedRectangleBorder(
@@ -57,7 +57,7 @@ class ButtonRow extends StatelessWidget {
               ),
               minimumSize: const Size(100, 40),
             ),
-            child: const Text("Something Else", style: TextStyle(color: Colors.white)),
+            child: const Text("Social Benefits", style: TextStyle(color: Colors.white)),
           ),
         ],
       ),

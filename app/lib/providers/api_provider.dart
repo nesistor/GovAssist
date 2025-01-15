@@ -9,9 +9,11 @@ import '../models/models.dart';
 class ApiProvider with ChangeNotifier {
   final List<Message> _messages = [];
   bool _isLoading = false;
+  String _initialMessage = '';
 
   List<Message> get messages => _messages;
   bool get isLoading => _isLoading;
+  String get initialMessage => _initialMessage;
 
   ApiProvider() {
     _fetchInitialMessage(); // Fetch the initial message when ApiProvider is created
@@ -23,18 +25,14 @@ class ApiProvider with ChangeNotifier {
       var response = await http.get(url);
       if (response.statusCode == 200) {
         var responseBody = utf8.decode(response.bodyBytes);
-        _addMessage(Message(
-          message: responseBody,
-          isUserMessage: false,
-        ));
+        _initialMessage = responseBody;
+        notifyListeners();
       } else {
         throw Exception('Failed to fetch initial message');
       }
     } catch (e) {
-      _addMessage(Message(
-        message: 'Error fetching initial message: $e',
-        isUserMessage: false,
-      ));
+      _initialMessage = 'Error fetching initial message: $e';
+      notifyListeners();
     }
   }
 
@@ -75,64 +73,6 @@ class ApiProvider with ChangeNotifier {
     }
   }
 
-  Future<void> uploadDocument(Uint8List fileBytes, String fileName) async {
-    var url = Uri.parse('https://government-assistant-api-183025368636.us-central1.run.app/validate-document');
-    try {
-      _setLoading(true);
-      _addMessage(Message(
-        message: 'Uploading document...',
-        isUserMessage: true,
-      ));
-
-      // Logowanie wykrytego MIME Type
-      String mimeType = _detectMimeType(fileName);
-      print("Detected MIME Type: $mimeType");
-
-      var request = http.MultipartRequest('POST', url);
-      request.files.add(http.MultipartFile.fromBytes(
-        'file',
-        fileBytes,
-        filename: fileName,
-        contentType: MediaType.parse(mimeType),
-      ));
-
-      var streamedResponse = await request.send();
-      var response = await http.Response.fromStream(streamedResponse);
-
-      if (response.statusCode == 200) {
-        var responseBody = utf8.decode(response.bodyBytes);
-        var responseData = json.decode(responseBody);
-
-        String resultMessage = responseData['content'] ?? 'No content available';
-        _addMessage(Message(
-          message: resultMessage,
-          isUserMessage: false,
-          isMarkdown: true,
-        ));
-      } else if (response.statusCode == 400) {
-        var responseBody = utf8.decode(response.bodyBytes);
-        var responseData = json.decode(responseBody);
-
-        _addMessage(Message(
-          message: responseData['detail'] ?? 'Unsupported file type.',
-          isUserMessage: false,
-        ));
-      } else {
-        _addMessage(Message(
-          message: 'Document upload failed: ${response.reasonPhrase}',
-          isUserMessage: false,
-        ));
-      }
-    } catch (e) {
-      _addMessage(Message(
-        message: 'Error occurred: $e',
-        isUserMessage: false,
-      ));
-    } finally {
-      _setLoading(false);
-    }
-  }
-
   void _addMessage(Message message) {
     _messages.add(message);
     notifyListeners();
@@ -141,16 +81,5 @@ class ApiProvider with ChangeNotifier {
   void _setLoading(bool isLoading) {
     _isLoading = isLoading;
     notifyListeners();
-  }
-
-  String _detectMimeType(String fileName) {
-    if (fileName.endsWith('.pdf')) {
-      return 'application/pdf';
-    } else if (fileName.endsWith('.docx')) {
-      return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
-    } else {
-      print('Unsupported file type: $fileName');
-      throw Exception('Unsupported file type. Only PDF and DOCX are allowed.');
-    }
   }
 }
