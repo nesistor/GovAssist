@@ -119,6 +119,7 @@ class _ChatBodyState extends State<ChatBody> {
                 child: TextField(
                   controller: _controller,
                   style: const TextStyle(color: Colors.white),
+                  onSubmitted: (_) => _sendMessage(), // Send message on Enter key press
                   decoration: const InputDecoration(
                     hintText: 'Type your message...',
                     hintStyle: TextStyle(color: Colors.white),
