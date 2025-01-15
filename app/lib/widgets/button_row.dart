@@ -10,7 +10,7 @@ class ButtonRow extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 10.0),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,  // This will center the buttons
         children: [
           ElevatedButton(
             onPressed: () => onButtonPressed("Driving License"),

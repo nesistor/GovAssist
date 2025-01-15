@@ -48,6 +48,8 @@ class _ChatBodyState extends State<ChatBody> {
 
     // Automatically scroll to the bottom after a new message is added
     _scrollToBottom();
+
+    // Clear the input text field after sending the message
     _controller.clear();
   }
 
@@ -77,12 +79,11 @@ class _ChatBodyState extends State<ChatBody> {
             padding: const EdgeInsets.all(16.0),
             child: Text(
               apiProvider.initialMessage,
-              style: const TextStyle(fontSize: 16, color: Colors.white), // White text, no background
+              style: const TextStyle(fontSize: 16, color: Colors.white),
             ),
           ),
-        // Centering the ButtonRow widget
         Center(
-          child: ButtonRow(onButtonPressed: _handleButtonPress), // Add the button row
+          child: ButtonRow(onButtonPressed: _handleButtonPress),
         ),
         Expanded(
           child: Scrollbar(
