@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/api_provider.dart';
-import '../widgets/button_row.dart';
-import '../widgets/chat_bubble.dart';
+import '../widgets/button_row.dart'; // Assuming ButtonRow is in a separate file
+import '../widgets/chat_bubble.dart'; // Assuming ChatBubble is in a separate file
 import 'package:file_picker/file_picker.dart';
 import 'dart:typed_data';
 
@@ -75,16 +75,15 @@ class _ChatBodyState extends State<ChatBody> {
         if (apiProvider.initialMessage.isNotEmpty) 
           Padding(
             padding: const EdgeInsets.all(16.0),
-            child: Container(
-              color: Colors.white,
-              padding: const EdgeInsets.all(12.0),
-              child: Text(
-                apiProvider.initialMessage,
-                style: const TextStyle(fontSize: 16, color: Colors.black),
-              ),
+            child: Text(
+              apiProvider.initialMessage,
+              style: const TextStyle(fontSize: 16, color: Colors.white), // White text, no background
             ),
           ),
-        ButtonRow(onButtonPressed: _handleButtonPress), // Add the button row
+        // Centering the ButtonRow widget
+        Center(
+          child: ButtonRow(onButtonPressed: _handleButtonPress), // Add the button row
+        ),
         Expanded(
           child: Scrollbar(
             controller: _scrollController,
