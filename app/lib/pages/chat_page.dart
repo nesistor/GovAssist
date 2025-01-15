@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/api_provider.dart';
 import '../widgets/chat_bubble.dart';
+import '../widgets/button_row.dart';
 import 'package:file_picker/file_picker.dart';
-import 'dart:typed_data'; 
+import 'dart:typed_data';
 
 class ChatPage extends StatelessWidget {
   const ChatPage({super.key});
@@ -37,7 +38,7 @@ class ChatBody extends StatefulWidget {
 
 class _ChatBodyState extends State<ChatBody> {
   final TextEditingController _controller = TextEditingController();
-  final ScrollController _scrollController = ScrollController(); // Scroll controller for managing scrolling
+  final ScrollController _scrollController = ScrollController();
 
   void _sendMessage() async {
     if (_controller.text.trim().isEmpty) return;
@@ -60,18 +61,24 @@ class _ChatBodyState extends State<ChatBody> {
     }
   }
 
+  void _handleButtonPress(String text) {
+    _controller.text = text;
+    _sendMessage();
+  }
+
   @override
   Widget build(BuildContext context) {
     final apiProvider = Provider.of<ApiProvider>(context);
 
     return Column(
       children: [
+        ButtonRow(onButtonPressed: _handleButtonPress), // Add the button row
         Expanded(
-          child: Scrollbar( // Adds a visible scrollbar for desktop-style scrolling
+          child: Scrollbar(
             controller: _scrollController,
-            thumbVisibility: true, // Ensure the scrollbar thumb is always visible
+            thumbVisibility: true,
             child: ListView.builder(
-              controller: _scrollController, // Attach the ScrollController
+              controller: _scrollController,
               itemCount: apiProvider.messages.length,
               itemBuilder: (context, index) {
                 final message = apiProvider.messages[index];
@@ -84,7 +91,7 @@ class _ChatBodyState extends State<ChatBody> {
             ),
           ),
         ),
-        if (apiProvider.isLoading) // Show the loading indicator
+        if (apiProvider.isLoading)
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: Row(
