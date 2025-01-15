@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/api_provider.dart';
-import '../widgets/button_row.dart'; // Import the ButtonRow widget
+import '../widgets/button_row.dart';
+import '../widgets/chat_bubble.dart';
 import 'package:file_picker/file_picker.dart';
 import 'dart:typed_data';
 
