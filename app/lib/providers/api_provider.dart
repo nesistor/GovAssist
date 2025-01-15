@@ -13,6 +13,31 @@ class ApiProvider with ChangeNotifier {
   List<Message> get messages => _messages;
   bool get isLoading => _isLoading;
 
+  ApiProvider() {
+    _fetchInitialMessage(); // Fetch the initial message when ApiProvider is created
+  }
+
+  Future<void> _fetchInitialMessage() async {
+    var url = Uri.parse('https://government-assistant-api-183025368636.us-central1.run.app/initial-message');
+    try {
+      var response = await http.get(url);
+      if (response.statusCode == 200) {
+        var responseBody = utf8.decode(response.bodyBytes);
+        _addMessage(Message(
+          message: responseBody,
+          isUserMessage: false,
+        ));
+      } else {
+        throw Exception('Failed to fetch initial message');
+      }
+    } catch (e) {
+      _addMessage(Message(
+        message: 'Error fetching initial message: $e',
+        isUserMessage: false,
+      ));
+    }
+  }
+
   Future<void> generateResponse(String question) async {
     var url = Uri.parse('https://government-assistant-api-183025368636.us-central1.run.app/generate-response');
     try {
