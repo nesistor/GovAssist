@@ -1,134 +1,156 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../providers/api_provider.dart';
-import '../widgets/chat_bubble.dart';
-import 'package:file_picker/file_picker.dart';
-import 'dart:typed_data'; 
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'dart:typed_data';
+import 'package:http_parser/http_parser.dart';
 
-class ChatPage extends StatelessWidget {
-  const ChatPage({super.key});
+import '../models/models.dart';
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'GovAssist',
-          style: TextStyle(
-            color: Colors.white, 
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        backgroundColor: Colors.grey[800], 
-        centerTitle: true,
-        elevation: 0, 
-      ),
-      body: const ChatBody(),
-    );
-  }
-}
+class ApiProvider with ChangeNotifier {
+  final List<Message> _messages = [];
+  bool _isLoading = false;
 
-class ChatBody extends StatefulWidget {
-  const ChatBody({super.key});
+  List<Message> get messages => _messages;
+  bool get isLoading => _isLoading;
 
-  @override
-  State<ChatBody> createState() => _ChatBodyState();
-}
-
-class _ChatBodyState extends State<ChatBody> {
-  final TextEditingController _controller = TextEditingController();
-
-  void _sendMessage() async {
-    if (_controller.text.trim().isEmpty) return;
-
-    final apiProvider = Provider.of<ApiProvider>(context, listen: false);
-    await apiProvider.generateResponse(_controller.text);
-    _controller.clear();
+  ApiProvider() {
+    _fetchInitialMessage(); // Fetch the initial message when ApiProvider is created
   }
 
-  void _addDocument() async {
-    final apiProvider = Provider.of<ApiProvider>(context, listen: false);
-
+  Future<void> _fetchInitialMessage() async {
+    var url = Uri.parse('https://government-assistant-api-183025368636.us-central1.run.app/initial-message');
     try {
-      FilePickerResult? result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['pdf', 'doc', 'docx'],
-      );
-
-      if (result != null) {
-        Uint8List? fileBytes = result.files.single.bytes;
-        String fileName = result.files.single.name;
-        await apiProvider.uploadDocument(fileBytes!, fileName);
+      var response = await http.get(url);
+      if (response.statusCode == 200) {
+        var responseBody = utf8.decode(response.bodyBytes);
+        _addMessage(Message(
+          message: responseBody,
+          isUserMessage: false,
+        ));
+      } else {
+        throw Exception('Failed to fetch initial message');
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to pick or upload document: $e')),
-      );
+      _addMessage(Message(
+        message: 'Error fetching initial message: $e',
+        isUserMessage: false,
+      ));
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final apiProvider = Provider.of<ApiProvider>(context);
+  Future<void> generateResponse(String question) async {
+    var url = Uri.parse('https://government-assistant-api-183025368636.us-central1.run.app/generate-response');
+    try {
+      _setLoading(true);
+      _addMessage(Message(message: question, isUserMessage: true));
 
-    return Column(
-      children: [
-        Expanded(
-          child: ListView.builder(
-            itemCount: apiProvider.messages.length,
-            itemBuilder: (context, index) {
-              final message = apiProvider.messages[index];
-              return ChatBubble(
-                message: message.message,
-                isUserMessage: message.isUserMessage,
-                isMarkdown: message.isMarkdown,
-              );
-            },
-          ),
-        ),
-        if (apiProvider.isLoading) // Show the loading dots
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: const [
-                CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                ),
-                SizedBox(width: 10),
-                Text("Loading...", style: TextStyle(color: Colors.white)),
-              ],
-            ),
-          ),
-        Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Row(
-            children: [
-              IconButton(
-                icon: const Icon(Icons.attach_file, color: Colors.white),
-                onPressed: _addDocument,
-              ),
-              Expanded(
-                child: TextField(
-                  controller: _controller,
-                  style: const TextStyle(color: Colors.white),
-                  decoration: const InputDecoration(
-                    hintText: 'Type your message...',
-                    hintStyle: TextStyle(color: Colors.white),
-                    border: OutlineInputBorder(),
-                    filled: true,
-                    fillColor: Colors.black,
-                  ),
-                ),
-              ),
-              IconButton(
-                icon: const Icon(Icons.send, color: Colors.white),
-                onPressed: _sendMessage,
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
+      var response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json; charset=utf-8'},
+        body: json.encode({'question': question}),
+      );
+
+      if (response.statusCode == 200) {
+        var responseBody = utf8.decode(response.bodyBytes);
+        var responseData = json.decode(responseBody);
+
+        if (responseData is List && responseData.isNotEmpty) {
+          String serverResponse = responseData[0];
+          _addMessage(Message(
+            message: serverResponse,
+            isUserMessage: false,
+            isMarkdown: true,
+          ));
+        }
+      } else {
+        throw Exception('Failed to load response');
+      }
+    } catch (e) {
+      _addMessage(Message(
+        message: 'Error: $e',
+        isUserMessage: false,
+      ));
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<void> uploadDocument(Uint8List fileBytes, String fileName) async {
+    var url = Uri.parse('https://government-assistant-api-183025368636.us-central1.run.app/validate-document');
+    try {
+      _setLoading(true);
+      _addMessage(Message(
+        message: 'Uploading document...',
+        isUserMessage: true,
+      ));
+
+      // Logowanie wykrytego MIME Type
+      String mimeType = _detectMimeType(fileName);
+      print("Detected MIME Type: $mimeType");
+
+      var request = http.MultipartRequest('POST', url);
+      request.files.add(http.MultipartFile.fromBytes(
+        'file',
+        fileBytes,
+        filename: fileName,
+        contentType: MediaType.parse(mimeType),
+      ));
+
+      var streamedResponse = await request.send();
+      var response = await http.Response.fromStream(streamedResponse);
+
+      if (response.statusCode == 200) {
+        var responseBody = utf8.decode(response.bodyBytes);
+        var responseData = json.decode(responseBody);
+
+        String resultMessage = responseData['content'] ?? 'No content available';
+        _addMessage(Message(
+          message: resultMessage,
+          isUserMessage: false,
+          isMarkdown: true,
+        ));
+      } else if (response.statusCode == 400) {
+        var responseBody = utf8.decode(response.bodyBytes);
+        var responseData = json.decode(responseBody);
+
+        _addMessage(Message(
+          message: responseData['detail'] ?? 'Unsupported file type.',
+          isUserMessage: false,
+        ));
+      } else {
+        _addMessage(Message(
+          message: 'Document upload failed: ${response.reasonPhrase}',
+          isUserMessage: false,
+        ));
+      }
+    } catch (e) {
+      _addMessage(Message(
+        message: 'Error occurred: $e',
+        isUserMessage: false,
+      ));
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  void _addMessage(Message message) {
+    _messages.add(message);
+    notifyListeners();
+  }
+
+  void _setLoading(bool isLoading) {
+    _isLoading = isLoading;
+    notifyListeners();
+  }
+
+  String _detectMimeType(String fileName) {
+    if (fileName.endsWith('.pdf')) {
+      return 'application/pdf';
+    } else if (fileName.endsWith('.docx')) {
+      return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+    } else {
+      print('Unsupported file type: $fileName');
+      throw Exception('Unsupported file type. Only PDF and DOCX are allowed.');
+    }
   }
 }
