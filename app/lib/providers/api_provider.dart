@@ -25,7 +25,10 @@ class ApiProvider with ChangeNotifier {
       var response = await http.get(url);
       if (response.statusCode == 200) {
         var responseBody = utf8.decode(response.bodyBytes);
-        _initialMessage = responseBody;
+
+        // Remove the quotes from the initial message
+        _initialMessage = responseBody.replaceAll('"', '').trim();
+
         notifyListeners();
       } else {
         throw Exception('Failed to fetch initial message');
@@ -35,7 +38,7 @@ class ApiProvider with ChangeNotifier {
       notifyListeners();
     }
   }
-
+  
   Future<void> generateResponse(String question) async {
     var url = Uri.parse('https://government-assistant-api-183025368636.us-central1.run.app/generate-response');
     try {
