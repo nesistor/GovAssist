@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/api_provider.dart';
 import '../widgets/chat_bubble.dart';
-import '../widgets/button_row.dart';
+import '../widgets/button_row.dart'; // Import the ButtonRow widget
 import 'package:file_picker/file_picker.dart';
 import 'dart:typed_data';
 
@@ -119,7 +119,7 @@ class _ChatBodyState extends State<ChatBody> {
                 child: TextField(
                   controller: _controller,
                   style: const TextStyle(color: Colors.white),
-                  onSubmitted: (_) => _sendMessage(), // Send message on Enter key press
+                  onSubmitted: (_) => _sendMessage(),
                   decoration: const InputDecoration(
                     hintText: 'Type your message...',
                     hintStyle: TextStyle(color: Colors.white),

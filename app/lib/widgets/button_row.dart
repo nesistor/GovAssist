@@ -1,39 +1,65 @@
 import 'package:flutter/material.dart';
 
 class ButtonRow extends StatelessWidget {
-  final void Function(String) onButtonPressed;
+  final Function(String) onButtonPressed;
 
   const ButtonRow({Key? key, required this.onButtonPressed}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(8.0),
+      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 10.0),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildButton(context, 'Driving License'),
-          _buildButton(context, 'ID'),
-          _buildButton(context, 'Passport'),
-          _buildButton(context, 'Something else?'),
+          ElevatedButton(
+            onPressed: () => onButtonPressed("Driving License"),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.grey[800],
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              minimumSize: const Size(100, 40), // Square button dimensions
+            ),
+            child: const Text("Driving License", style: TextStyle(color: Colors.white)),
+          ),
+          const SizedBox(width: 10),
+          ElevatedButton(
+            onPressed: () => onButtonPressed("ID"),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.grey[800],
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              minimumSize: const Size(100, 40),
+            ),
+            child: const Text("ID", style: TextStyle(color: Colors.white)),
+          ),
+          const SizedBox(width: 10),
+          ElevatedButton(
+            onPressed: () => onButtonPressed("Passport"),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.grey[800],
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              minimumSize: const Size(100, 40),
+            ),
+            child: const Text("Passport", style: TextStyle(color: Colors.white)),
+          ),
+          const SizedBox(width: 10),
+          ElevatedButton(
+            onPressed: () => onButtonPressed("Something Else"),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.grey[800],
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              minimumSize: const Size(100, 40),
+            ),
+            child: const Text("Something Else", style: TextStyle(color: Colors.white)),
+          ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildButton(BuildContext context, String text) {
-    return ElevatedButton(
-      onPressed: () => onButtonPressed(text),
-      style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.grey[800], // Same color as the chat bubbles
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
-      ),
-      child: Text(
-        text,
-        style: const TextStyle(color: Colors.white),
       ),
     );
   }
