@@ -2,7 +2,7 @@ import logging
 from openai import OpenAI
 from fastapi import HTTPException
 import os
-from api.services.tools_funciton import switch_prompt, get_service_links_us, tools_definition
+from api.services.tools_function import switch_prompt, get_service_links_us, tools_definition
 import json
 
 # API keys

@@ -66,11 +66,10 @@ def ask_question(request: QuestionRequest):
     try:
         logger.debug(f"Received request data: {request}")
         
-        # Call generate_response synchronously (no await)
         response = generate_response(request.dict())
         
         logger.debug(f"Generated response: {response}")
-        return response  # Return the response directly
+        return response 
         
     except Exception as e:
         logger.error(f"Error occurred while processing the request: {str(e)}")
