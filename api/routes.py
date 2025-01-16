@@ -30,7 +30,7 @@ def get_options():
 
 # API endpoint for document validation
 @router.post("/validate-document")
-async def validate_document(file: UploadFile):
+def validate_document(file: UploadFile):
     logger.debug(f"Received file: {file.filename}, content_type: {file.content_type}")
     if file.content_type not in ["image/jpeg", "image/png", "application/pdf"]:
         raise HTTPException(status_code=400, detail="Unsupported file type. Only JPEG, PNG, and PDF are allowed.")
