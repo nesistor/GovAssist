@@ -20,13 +20,9 @@ tools_map = {
     "get_service_links_us": get_service_links_us,
 }
 
-
-
 def process_image_with_grok(base64_image: str) -> dict:
     try:
         logger.debug("Sending request to Grok Vision model.")
-        
-        # Replace the asynchronous call with a synchronous one
         response = client.chat.completions.create(
             model=VISION_MODEL_NAME,
             messages=[
@@ -66,7 +62,6 @@ def process_image_with_grok(base64_image: str) -> dict:
     except Exception as e:
         logger.error("Error processing image: %s", str(e))
         raise HTTPException(status_code=500, detail=f"Error processing image: {str(e)}")
-
 
 def process_document_with_text_model(aggregated_results: list) -> dict:
     document_context = " ".join([str(result) for result in aggregated_results])
@@ -132,71 +127,6 @@ def process_document_with_text_model(aggregated_results: list) -> dict:
     except Exception as e:
         logger.error("Error processing document: %s", str(e))
         raise HTTPException(status_code=500, detail=f"Error processing document: {str(e)}")
-
-
-def generate_response_old(request: dict) -> str:
-    """
-    Generates a response based on the user's request and interaction.
-    """
-    base_messages = [
-        {
-            "role": "system",
-            "content": "You are a funny, friendly, and incredibly knowledgeable assistant who works at the DMV. "
-                       "You are an expert in all DMV processes, forms, regulations, and problem-solving scenarios. "
-                       "Your job is to help users in a lighthearted, easy-to-understand, and supportive way. "
-                       "Explain complex processes in simple terms, use relatable analogies, and add a touch of humor to make DMV topics less stressful. "
-                       "Always stay polite, positive, and provide clear, actionable solutions to any DMV-related questions or issues."
-        }
-    ]
-    base_messages.append({"role": "user", "content": request['question']})
-
-    try:
-        # Initial API call to the chat model
-        response = client.chat.completions.create(
-            model=CHAT_MODEL_NAME,
-            messages=base_messages,
-        )
-
-        # Extract the first response from the chat model
-        initial_message = response.choices[0].message
-
-        # Check if the user's query involves document-related topics
-        requires_document = any(keyword in request['question'].lower() for keyword in ["form", "document", "application", "download"])
-
-        # If documents are relevant, prepare document links HTML
-        document_links_html = ""
-        if requires_document:
-            for doc_key, doc_info in DOCUMENTS_DB.items():
-                document_links_html += f'<p><a href="{doc_info["url"]}" download="{doc_info["document_name"]}">{doc_info["document_name"]}</a></p>'
-
-        # Create an interactive response depending on the context
-        if requires_document:
-            grok_response = (
-                f"Sure thing! It sounds like you need some official documents. Here are the ones I think will help you: "
-                f"{document_links_html} Let me know if you'd like help filling them out or understanding what to do next!"
-            )
-        else:
-            grok_response = (
-                f"Great question! {initial_message.content} "
-                f"If at any point you think a DMV document might help, just let me know!"
-            )
-
-        # Prepare follow-up messages for continued conversation
-        follow_up_messages = base_messages + [initial_message, {"role": "assistant", "content": grok_response}]
-
-        # Make the second API call to refine or extend the response
-        final_response = client.chat.completions.create(
-            model=CHAT_MODEL_NAME,
-            messages=follow_up_messages,
-        )
-
-        # Extract and process the final response content
-        final_answer = final_response.choices[0].message.content
-        return final_answer
-
-    except Exception as e:
-        logger.error(f"Error generating response: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Error processing the request: {str(e)}")
 
 def generate_response(request: dict) -> str:
     logger.info(f"Received question: {request['question']}")
