@@ -38,43 +38,43 @@ class ApiProvider with ChangeNotifier {
       notifyListeners();
     }
   }
-  
+
   Future<void> generateResponse(String question) async {
-    var url = Uri.parse('https://government-assistant-api-183025368636.us-central1.run.app/generate-response');
-    try {
-      _setLoading(true);
-      _addMessage(Message(message: question, isUserMessage: true));
+  var url = Uri.parse('https://government-assistant-api-183025368636.us-central1.run.app/generate-response');
+  
+  try {
+    _setLoading(true);
+    _addMessage(Message(message: question, isUserMessage: true));
 
-      var response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json; charset=utf-8'},
-        body: json.encode({'question': question}),
-      );
+    var response = await http.post(
+      url,
+      headers: {'Content-Type': 'application/json; charset=utf-8'},
+      body: json.encode({'question': question}),
+    );
 
-      if (response.statusCode == 200) {
-        var responseBody = utf8.decode(response.bodyBytes);
-        var responseData = json.decode(responseBody);
+    if (response.statusCode == 200) {
+      var responseBody = utf8.decode(response.bodyBytes);
+      var responseData = json.decode(responseBody);
 
-        if (responseData is List && responseData.isNotEmpty) {
-          String serverResponse = responseData[0];
-          _addMessage(Message(
-            message: serverResponse,
-            isUserMessage: false,
-            isMarkdown: true,
-          ));
-        }
-      } else {
-        throw Exception('Failed to load response');
-      }
-    } catch (e) {
+      // The response is now a single string, so no need to check for List
+      String serverResponse = responseData;  // Directly assign the response data as a string
       _addMessage(Message(
-        message: 'Error: $e',
+        message: serverResponse,
         isUserMessage: false,
+        isMarkdown: false,
       ));
-    } finally {
-      _setLoading(false);
+    } else {
+      throw Exception('Failed to load response');
     }
+  } catch (e) {
+    _addMessage(Message(
+      message: 'Error: $e',
+      isUserMessage: false,
+    ));
+  } finally {
+    _setLoading(false);
   }
+}
 
   void _addMessage(Message message) {
     _messages.add(message);
