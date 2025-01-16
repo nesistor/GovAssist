@@ -3,7 +3,6 @@ from openai import OpenAI
 from fastapi import HTTPException
 import os
 from api.services.tools_funciton import switch_prompt, get_service_links_us, tools_definition
-import asyncio
 import json
 
 # API keys
@@ -22,10 +21,13 @@ tools_map = {
 }
 
 
-async def process_image_with_grok(base64_image: str) -> dict:
+
+def process_image_with_grok(base64_image: str) -> dict:
     try:
         logger.debug("Sending request to Grok Vision model.")
-        response = await client.chat.completions.create(
+        
+        # Replace the asynchronous call with a synchronous one
+        response = client.chat.completions.create(
             model=VISION_MODEL_NAME,
             messages=[
                 {
@@ -64,6 +66,7 @@ async def process_image_with_grok(base64_image: str) -> dict:
     except Exception as e:
         logger.error("Error processing image: %s", str(e))
         raise HTTPException(status_code=500, detail=f"Error processing image: {str(e)}")
+
 
 def process_document_with_text_model(aggregated_results: list) -> dict:
     document_context = " ".join([str(result) for result in aggregated_results])
