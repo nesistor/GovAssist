@@ -38,6 +38,89 @@ DOCUMENTS_DB = {
     ],
 }
 
+# Define tools for function calling
+tools_definition = [
+    # {
+#     "type": "function",  # Specifies that this is a function type object
+#     "function": {
+#         "name": "retrieve_relevant_chunks",  # The name of the function
+#         "description": "Retrieve the most relevant document chunks based on the user's query",  # A brief description of what the function does
+#         "parameters": {  # Defines the parameters that the function accepts
+#             "type": "object",  # The parameters are an object (a dictionary in Python)
+#             "properties": {  # Specifies the properties (keys) inside the object (parameters)
+#                 "query": {  # The 'query' parameter
+#                     "type": "string",  # The type of the 'query' parameter is a string
+#                     "description": "User's query."  # A brief description of what the 'query' represents
+#                 },
+#                 "category": {  # The 'category' parameter
+#                     "type": "string",  # The type of the 'category' parameter is a string
+#                     "description": "The category of the documents."  # A brief description of what the 'category' represents
+#                 }
+#             },
+#             "required": ["query", "category"]  # The 'query' and 'category' parameters are required when calling the function
+#         }
+#     }
+# },
+    # Added document links tool definition
+    {
+        "type": "function",
+        "function": {
+            "name": "get_documents_links",
+            "description": "Retrieve relevant document links for a specific ministry based on the user's query.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "ministry_id": {"type": "string", "description": "The ministry for which documents are required."},
+                    "query": {"type": "string", "description": "The user's query that might include keywords like 'form', 'document', or 'application'."},
+                },
+                "required": ["ministry_id", "query"]
+            }
+        }
+    },
+    # Ministry Detection Tool
+    {
+        "type": "function",
+        "function": {
+            "name": "detect_ministry",
+            "description": "Detect the relevant government ministry based on the user's query.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "query": {"type": "string", "description": "The user's query to identify the relevant ministry."},
+                },
+                "required": ["query"]
+            }
+        }
+    },
+]
+
+# Ministry detection function
+def detect_ministry(query: str) -> dict:
+    """Detects the relevant ministry based on the user's query."""
+    # Define keywords for each ministry
+    ministry_keywords = {
+        "dmv": ["driver", "license", "vehicle", "registration", "dmv"],
+        "health": ["health", "insurance", "medical", "claim", "hospital"],
+        "education": ["scholarship", "student", "loan", "education", "university"],
+        "tax": ["tax", "refund", "filing", "income", "irs"],
+    }
+
+    # Check which ministry matches the query
+    for ministry, keywords in ministry_keywords.items():
+        if any(keyword in query.lower() for keyword in keywords):
+            return {"ministry": ministry}
+
+    return {"ministry": "general"}  # Default to "general" if no match
+
+# Function to get document links based on the ministry and query
+def get_documents_links(ministry_id, query):
+    if any(keyword in query.lower() for keyword in ["form", "document", "application", "download"]):
+        documents = DOCUMENTS_DB.get(ministry_id, [])
+        return {"documents": documents}
+    else:
+        return {"documents": []}
+
+
 
 def process_image_with_grok(base64_image: str) -> dict:
     try:
@@ -216,9 +299,14 @@ def generate_response_old(request: dict) -> str:
 def generate_response(request: dict) -> str:
     """
     Generates a response based on the user's request and interaction.
-    Includes support for various ministries.
+    Supports all government ministries.
     """
-    ministry_id = request.get("ministry_id", "general")  # Default ministry if not provided
+    print("Starting to generate response.")
+
+    # Step 1: Extract ministry_id from the request (default to 'general')
+    ministry_id = request.get("ministry_id", "general")  
+    logger.debug(f"Ministry ID set to: {ministry_id}")
+
     base_messages = [
         {
             "role": "system",
@@ -228,64 +316,69 @@ def generate_response(request: dict) -> str:
         }
     ]
     
+    # Step 2: Append user's query to the message
     base_messages.append({"role": "user", "content": request['question']})
+    logger.debug(f"User question added to message: {request['question']}")
 
     try:
-        # Check the ministry and modify content accordingly
+        # Step 3: Detect the ministry based on the query
+        logger.debug("Detecting ministry based on user query.")
+        ministry_response = detect_ministry(request['question'])
+        ministry_id = ministry_response.get("ministry", "general")  # Default to "general" if not found
+        logger.debug(f"Detected ministry: {ministry_id}")
+
+        # Step 4: Modify the system message based on the detected ministry
         if ministry_id == "dmv":
-            base_messages[0]["content"] += " I am an expert in DMV services like driver's license and vehicle registration."
+            base_messages[0]["content"] += " I specialize in DMV services like driver's license and vehicle registration."
         elif ministry_id == "health":
             base_messages[0]["content"] += " I can assist with health-related services, including applications and insurance."
         elif ministry_id == "education":
-            base_messages[0]["content"] += " I can guide you through the educational services like scholarships and student loans."
+            base_messages[0]["content"] += " I can guide you through educational services like scholarships and student loans."
         elif ministry_id == "tax":
             base_messages[0]["content"] += " I can help you with tax filing, refunds, and other financial matters."
         else:
             base_messages[0]["content"] += " I can help with general government services."
 
-        # Initial API call to generate the response
+        # Step 5: Initial API call to generate the response using function calls for documents
+        logger.debug("Making API call to OpenAI to generate response.")
         response = client.chat.completions.create(
             model=CHAT_MODEL_NAME,
             messages=base_messages,
+            functions=tools_definition  # Pass tools_definition for function calls
         )
+        logger.debug(f"Received API response: {response}")
 
-        # Extract the first response from the chat model
+        # Step 6: Extract the first response from the chat model
         initial_message = response.choices[0].message
+        logger.debug(f"Initial message content from API: {initial_message.content}")
 
-        # Check if documents are needed
+        # Step 7: Check if documents are needed based on the user's request
         requires_document = any(keyword in request['question'].lower() for keyword in ["form", "document", "application", "download"])
+        logger.debug(f"Does the user require documents? {'Yes' if requires_document else 'No'}")
 
-        # Prepare document links for all ministries
-        document_links_html = ""
-        if requires_document and ministry_id in DOCUMENTS_DB:
-            for doc_info in DOCUMENTS_DB[ministry_id]:
-                document_links_html += f'<p><a href="{doc_info["url"]}" download="{doc_info["document_name"]}">{doc_info["document_name"]}</a></p>'
-
-        # Handle responses based on ministry and user query
+        # Step 8: If documents are needed, call the get_documents_links function
         if requires_document:
-            grok_response = (
-                f"It seems like you need some official documents. Here are the relevant documents: "
-                f"{document_links_html} Let me know if you need help filling them out!"
-            )
+            logger.debug(f"Retrieving documents for ministry '{ministry_id}' based on user query.")
+            documents_response = get_documents_links(ministry_id, request['question'])
+            document_links_html = ""
+            if documents_response['documents']:
+                for doc_info in documents_response['documents']:
+                    document_links_html += f'<p><a href="{doc_info["url"]}" download="{doc_info["document_name"]}">{doc_info["document_name"]}</a></p>'
+                grok_response = (
+                    f"It seems like you need some official documents. Here are the relevant documents: "
+                    f"{document_links_html} Let me know if you need help filling them out!"
+                )
+                logger.debug(f"Generated document links: {document_links_html}")
+            else:
+                grok_response = "I couldn't find any documents based on your request. Could you please be more specific about the document you need?"
+                logger.debug("No documents found based on user query.")
         else:
             grok_response = f"Great question! Here's what I found: {initial_message.content}"
+            logger.debug(f"Generated response without documents: {grok_response}")
 
-        # Create follow-up messages and final response
-        follow_up_messages = base_messages + [initial_message, {"role": "assistant", "content": grok_response}]
-
-        # Make the second API call to refine or extend the response
-        final_response = client.chat.completions.create(
-            model=CHAT_MODEL_NAME,
-            messages=follow_up_messages,
-        )
-
-        final_answer = final_response.choices[0].message.content
-
-        # Ministry redirection logic
-        if "other ministry" in request['question'].lower():
-            return "It seems you need help with another ministry. Let me redirect you to the main government assistant, who can help with any other queries."
-
-        return final_answer
+        # Step 9: Return the final response including document links if applicable
+        logger.debug(f"Final response to return: {grok_response}")
+        return grok_response
 
     except Exception as e:
         logger.error(f"Error generating response: {str(e)}")
