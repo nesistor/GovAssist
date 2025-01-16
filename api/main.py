@@ -6,7 +6,6 @@ app = FastAPI(
     title="DMV Document Validator and Assistant",
     description="A combined API for document validation and DMV assistance.",
     version="1.0.0",
-    debug=True,
 )
 
 # Add CORS middleware
