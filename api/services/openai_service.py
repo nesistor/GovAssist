@@ -186,16 +186,10 @@ def generate_response_old(request: dict) -> str:
         logger.error(f"Error generating response: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error processing the request: {str(e)}")
 
-
-# Mapping of function names to implementations
-tools_map = {
-    "switch_prompt": switch_prompt,
-}
-
 # Main response generation function
 def generate_response(request: dict) -> str:
     """
-    Handles user requests and dynamically adjusts prompts using tools.
+    Handles user requests and dynamically provides service links for U.S. states using tools.
     """
     messages = [
         {"role": "user", "content": request['question']}
@@ -241,8 +235,6 @@ def generate_response(request: dict) -> str:
     except Exception as e:
         logger.error(f"Error generating response: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error processing the request: {str(e)}")
-
-
 
 
 

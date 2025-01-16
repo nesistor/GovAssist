@@ -1,10 +1,39 @@
 import requests
 
+# Mapping of function names to implementations
+tools_map = {
+    "switch_prompt": switch_prompt,
+    "get_service_links_us": get_service_links_us,
+}
+
 MINISTRY_PROMPTS = {
     "dmv": "You are a helpful assistant specializing in DMV-related queries, forms, and processes.",
     "tax": "You are an expert assistant in tax regulations, returns, and compliance.",
     "health": "You provide assistance with healthcare policies, benefits, and related services.",
     # Add more ministries as needed
+}
+
+# Example U.S. state-specific service links database
+SERVICE_LINKS_US = {
+    "california": {
+        "passport": "https://travel.state.gov/content/travel/en/passports.html",
+        "license": "https://www.dmv.ca.gov/portal/driver-licenses-identification-cards/",
+        "id": "https://www.dmv.ca.gov/portal/id-cards/",
+        "car_registration": "https://www.dmv.ca.gov/portal/vehicle-registration/"
+    },
+    "texas": {
+        "passport": "https://travel.state.gov/content/travel/en/passports.html",
+        "license": "https://www.txdps.state.tx.us/DriverLicense/",
+        "id": "https://www.txdps.state.tx.us/DriverLicense/",
+        "car_registration": "https://www.txdmv.gov/motorists/register-your-vehicle"
+    },
+    "new_york": {
+        "passport": "https://travel.state.gov/content/travel/en/passports.html",
+        "license": "https://dmv.ny.gov/driver-license/get-driver-license",
+        "id": "https://dmv.ny.gov/id-card/non-driver-id-card",
+        "car_registration": "https://dmv.ny.gov/registration/how-register-vehicle"
+    }
+    # Add more states as needed
 }
 
 # Tool function to switch prompts
@@ -13,83 +42,28 @@ def switch_prompt(ministry: str) -> dict:
         raise ValueError(f"Unknown ministry: {ministry}")
     return {"prompt": MINISTRY_PROMPTS[ministry]}
 
-def get_document_license_id_for_driving(query, state="California"):
-    if state.lower() != "california":
-        return {
-            "status": "error",
-            "message": "This tool only supports queries for California."
-        }
+
+
+# Tool function to get service links for U.S. states
+def get_service_links_us(state: str, service_type: str) -> Dict[str, str]:
+    """
+    Returns links for U.S. state-specific government services based on the state and service type.
+    """
+    state = state.lower()
+    if state not in SERVICE_LINKS_US:
+        raise ValueError(f"Unsupported state: {state}")
     
-    # Mock endpoint for driving license-related documents
-    api_url = "https://api.california.gov/driving-licenses"
-    
-    try:
-        # Simulate API request for driving license documents
-        response = requests.get(api_url, params={"query": query})
-        response.raise_for_status()
-        data = response.json()  # Assuming JSON response with relevant links or IDs
-        return {
-            "status": "success",
-            "license_data": data
-        }
-    except requests.exceptions.RequestException as e:
-        return {
-            "status": "error",
-            "message": f"Failed to fetch data: {e}"
-        }
+    links = SERVICE_LINKS_US[state]
+    if service_type not in links:
+        raise ValueError(f"Unsupported service type: {service_type}")
 
-def get_license_id(license_category, state="California"):
-    if state.lower() != "california":
-        return {
-            "status": "error",
-            "message": "This tool only supports queries for California."
-        }
-
-    # Mock API endpoint for license ID retrieval
-    api_url = f"https://api.california.gov/licenses/{license_category}"
-    
-    try:
-        # Simulate API request to fetch the license ID data
-        response = requests.get(api_url)
-        response.raise_for_status()
-        data = response.json()  # Assuming a JSON response with relevant license info
-        return {
-            "status": "success",
-            "license_data": data
-        }
-    except requests.exceptions.RequestException as e:
-        return {
-            "status": "error",
-            "message": f"Failed to fetch data: {e}"
-        }
-
-def get_passport_info(passport_category, state="California"):
-    if state.lower() != "california":
-        return {
-            "status": "error",
-            "message": "This tool only supports queries for California."
-        }
-
-    # Mock API endpoint for passport info retrieval
-    api_url = f"https://api.california.gov/passports/{passport_category}"
-    
-    try:
-        # Simulate API request to fetch passport-related data
-        response = requests.get(api_url)
-        response.raise_for_status()
-        data = response.json()  # Assuming a JSON response with relevant passport info
-        return {
-            "status": "success",
-            "passport_data": data
-        }
-    except requests.exceptions.RequestException as e:
-        return {
-            "status": "error",
-            "message": f"Failed to fetch data: {e}"
-        }
+    return {"link": links[service_type]}
 
 
-{
+
+# Define tools for function calling
+tools_definition = [
+    {
         "type": "function",
         "function": {
             "name": "switch_prompt",
@@ -104,70 +78,30 @@ def get_passport_info(passport_category, state="California"):
                 },
                 "required": ["ministry"]
             }
-        },
-    }
-
-
-{
-    "type": "function",
-    "function": {
-        "name": "get_document_license_id_for_driving",
-        "description": "Retrieve driving license document links or IDs for a specific query in California.",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "query": {"type": "string", "description": "Specific details related to the driving license document request (e.g., 'renewal process', 'eligibility criteria')."},
-                "state": {"type": "string", "description": "The state for which the query applies (fixed to 'California')."}
-            },
-            "required": ["query", "state"]
         }
-    }
-}
-
-{
-    "type": "function",
-    "function": {
-        "name": "get_license_id",
-        "description": "Retrieve the License ID or related document links for specific license queries.",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "license_category": {
-                    "type": "string",
-                    "description": "The category of the license (e.g., driver's license, business license, etc.)."
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "get_service_links_us",
+            "description": "Returns U.S. state-specific links for government services.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "state": {
+                        "type": "string",
+                        "description": "The U.S. state name, e.g., 'California', 'Texas', or 'New York'."
+                    },
+                    "service_type": {
+                        "type": "string",
+                        "description": "The type of service, e.g., 'passport', 'license', 'id', or 'car_registration'."
+                    }
                 },
-                "state": {
-                    "type": "string",
-                    "description": "The state where the license is registered (fixed to 'California')."
-                }
-            },
-            "required": ["license_category", "state"]
+                "required": ["state", "service_type"]
+            }
         }
     }
-}
-
-{
-    "type": "function",
-    "function": {
-        "name": "get_passport_info",
-        "description": "Retrieve passport information or document links based on user query.",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "passport_category": {
-                    "type": "string",
-                    "description": "The category of the passport query (e.g., renewal, application)."
-                },
-                "state": {
-                    "type": "string",
-                    "description": "The state where the passport is issued (fixed to 'California')."
-                }
-            },
-            "required": ["passport_category", "state"]
-        }
-    }
-}
-
+]
 
 
 
