@@ -2,7 +2,7 @@ import logging
 from openai import OpenAI
 from fastapi import HTTPException
 import os
-from api.services.tools_funciton import switch_prompt,get_service_links_us 
+from api.services.tools_funciton import switch_prompt, get_service_links_us 
 
 # API keys
 XAI_API_KEY = os.getenv("XAI_API_KEY")
@@ -20,10 +20,10 @@ tools_map = {
 }
 
 
-def process_image_with_grok(base64_image: str) -> dict:
+async def process_image_with_grok(base64_image: str) -> dict:
     try:
         logger.debug("Sending request to Grok Vision model.")
-        response = client.chat.completions.create(
+        response = await client.chat.completions.create(
             model=VISION_MODEL_NAME,
             messages=[
                 {
@@ -193,61 +193,54 @@ def generate_response_old(request: dict) -> str:
         logger.error(f"Error generating response: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error processing the request: {str(e)}")
 
-# Main response generation function
-def generate_response(request: dict) -> str:
-    """
-    Handles user requests and dynamically provides service links for U.S. states using tools.
-    """
-    messages = [
-        {"role": "user", "content": request['question']}
+async def generate_response(request: dict) -> str:
+    base_messages = [
+        {
+            "role": "system",
+            "content": "You are a friendly and helpful assistant with expertise in various government services. "
+                       "I can help with DMV, Health, Education, and Tax-related queries. "
+                       "My goal is to simplify processes and make things clear with a little bit of humor along the way."
+        }
     ]
     
+    base_messages.append({"role": "user", "content": request['question']})
+
     try:
-        # Initial API call with tools defined
-        response = client.chat.completions.create(
+        response = await client.chat.completions.create(
             model=CHAT_MODEL_NAME,
-            messages=messages,
-            tools=tools_definition,
+            messages=base_messages,
+            tools=tools_definition,  # Ensure this is passed in
             tool_choice="auto"
         )
-        
-        # Process tool calls if the response includes them
-        if response.choices[0].message.tool_calls:
-            for tool_call in response.choices[0].message.tool_calls:
+        # Process tool calls concurrently if present in the response
+        tool_calls = response.choices[0].message.tool_calls
+        if tool_calls:
+            tasks = []
+            for tool_call in tool_calls:
                 tool_name = tool_call.function.name
                 tool_args = json.loads(tool_call.function.arguments)
-                
-                # Execute the tool function and get results
-                result = tools_map[tool_name](**tool_args)
-                
-                # Append tool result to messages
-                messages.append(
-                    {
-                        "role": "tool",
-                        "content": json.dumps(result),
-                        "tool_call_id": tool_call.id
-                    }
-                )
-        
-        # Final API call with tool results
-        final_response = client.chat.completions.create(
+                tasks.append(execute_tool(tool_name, tool_args))
+
+            results = await asyncio.gather(*tasks)  # Running tool functions concurrently
+            for result in results:
+                messages.append({
+                    "role": "tool",
+                    "content": json.dumps(result),
+                    "tool_call_id": tool_call.id
+                })
+
+        final_response = await client.chat.completions.create(
             model=CHAT_MODEL_NAME,
             messages=messages,
-            tools=tools_definition,
+            tools=tools_definition,  # Ensure this is passed in as well
             tool_choice="auto"
         )
-        
+
         return final_response.choices[0].message.content
-    
+
     except Exception as e:
         logger.error(f"Error generating response: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error processing the request: {str(e)}")
-
-
-
-
-
-
 
 
 

@@ -69,6 +69,7 @@ def ask_question(request: QuestionRequest):
     Responds to user's question, potentially including document links.
     """
     try:
+        print("MAKAKA")
         response = generate_response(request.dict())
         return [response]
     except Exception as e:
