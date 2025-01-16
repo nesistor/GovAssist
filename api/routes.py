@@ -8,6 +8,8 @@ import tempfile
 import logging
 import os
 
+logging.basicConfig(level=logging.DEBUG)
+
 router = APIRouter()
 
 # Mock database containing document information
@@ -62,15 +64,16 @@ async def validate_document(file: UploadFile):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error processing the document: {str(e)}")
 
-# API endpoint for generating responses
 @router.post("/generate-response", response_model=List[str])
 def ask_question(request: QuestionRequest):
     """
     Responds to user's question, potentially including document links.
     """
     try:
-        print("MAKAKA")
+        print(f"Received request data: {request.dict()}")
         response = generate_response(request.dict())
+        print(f"Generated response: {response}")
         return [response]
     except Exception as e:
+        print(f"Error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error processing the request: {str(e)}")
