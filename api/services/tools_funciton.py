@@ -1,10 +1,6 @@
 import requests
+from typing import Dict
 
-# Mapping of function names to implementations
-tools_map = {
-    "switch_prompt": switch_prompt,
-    "get_service_links_us": get_service_links_us,
-}
 
 MINISTRY_PROMPTS = {
     "dmv": "You are a helpful assistant specializing in DMV-related queries, forms, and processes.",
@@ -41,7 +37,6 @@ def switch_prompt(ministry: str) -> dict:
     if ministry not in MINISTRY_PROMPTS:
         raise ValueError(f"Unknown ministry: {ministry}")
     return {"prompt": MINISTRY_PROMPTS[ministry]}
-
 
 
 # Tool function to get service links for U.S. states

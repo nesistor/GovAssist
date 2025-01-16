@@ -2,7 +2,7 @@ import logging
 from openai import OpenAI
 from fastapi import HTTPException
 import os
-import api.services.tools_funciton 
+from api.services.tools_funciton import switch_prompt,get_service_links_us 
 
 # API keys
 XAI_API_KEY = os.getenv("XAI_API_KEY")
@@ -12,6 +12,13 @@ CHAT_MODEL_NAME = "grok-beta"
 client = OpenAI(api_key=XAI_API_KEY, base_url="https://api.x.ai/v1")
 
 logger = logging.getLogger(__name__)
+
+# Mapping of function names to implementations
+tools_map = {
+    "switch_prompt": switch_prompt,
+    "get_service_links_us": get_service_links_us,
+}
+
 
 def process_image_with_grok(base64_image: str) -> dict:
     try:
