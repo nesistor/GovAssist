@@ -2,6 +2,7 @@ import logging
 from openai import OpenAI
 from fastapi import HTTPException
 import os
+import api.services.tools_funciton 
 
 # API keys
 XAI_API_KEY = os.getenv("XAI_API_KEY")
@@ -11,116 +12,6 @@ CHAT_MODEL_NAME = "grok-beta"
 client = OpenAI(api_key=XAI_API_KEY, base_url="https://api.x.ai/v1")
 
 logger = logging.getLogger(__name__)
-
-DOCUMENTS_DB_OLD = {
-    "driver_license_application": {
-        "document_name": "Driver's License Application Form",
-        "url": "https://www.dps.texas.gov/internetforms/forms/dl-14a.pdf"
-    },
-}
-
-DOCUMENTS_DB = {
-    "dmv": [
-        {"document_name": "Driver's License Application", "url": "http://example.com/dmv_license"},
-        {"document_name": "Vehicle Registration Form", "url": "http://example.com/dmv_registration"}
-    ],
-    "health": [
-        {"document_name": "Healthcare Application Form", "url": "http://example.com/health_application"},
-        {"document_name": "Insurance Claim Form", "url": "http://example.com/health_claim"}
-    ],
-    "education": [
-        {"document_name": "Scholarship Application", "url": "http://example.com/scholarship_application"},
-        {"document_name": "Student Loan Form", "url": "http://example.com/student_loan"}
-    ],
-    "tax": [
-        {"document_name": "Tax Filing Form", "url": "http://example.com/tax_filing"},
-        {"document_name": "Tax Refund Application", "url": "http://example.com/tax_refund"}
-    ],
-}
-
-# Define tools for function calling
-tools_definition = [
-    # {
-#     "type": "function",  # Specifies that this is a function type object
-#     "function": {
-#         "name": "retrieve_relevant_chunks",  # The name of the function
-#         "description": "Retrieve the most relevant document chunks based on the user's query",  # A brief description of what the function does
-#         "parameters": {  # Defines the parameters that the function accepts
-#             "type": "object",  # The parameters are an object (a dictionary in Python)
-#             "properties": {  # Specifies the properties (keys) inside the object (parameters)
-#                 "query": {  # The 'query' parameter
-#                     "type": "string",  # The type of the 'query' parameter is a string
-#                     "description": "User's query."  # A brief description of what the 'query' represents
-#                 },
-#                 "category": {  # The 'category' parameter
-#                     "type": "string",  # The type of the 'category' parameter is a string
-#                     "description": "The category of the documents."  # A brief description of what the 'category' represents
-#                 }
-#             },
-#             "required": ["query", "category"]  # The 'query' and 'category' parameters are required when calling the function
-#         }
-#     }
-# },
-    # Added document links tool definition
-    {
-        "type": "function",
-        "function": {
-            "name": "get_documents_links",
-            "description": "Retrieve relevant document links for a specific ministry based on the user's query.",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "ministry_id": {"type": "string", "description": "The ministry for which documents are required."},
-                    "query": {"type": "string", "description": "The user's query that might include keywords like 'form', 'document', or 'application'."},
-                },
-                "required": ["ministry_id", "query"]
-            }
-        }
-    },
-    # Ministry Detection Tool
-    {
-        "type": "function",
-        "function": {
-            "name": "detect_ministry",
-            "description": "Detect the relevant government ministry based on the user's query.",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "query": {"type": "string", "description": "The user's query to identify the relevant ministry."},
-                },
-                "required": ["query"]
-            }
-        }
-    },
-]
-
-# Ministry detection function
-def detect_ministry(query: str) -> dict:
-    """Detects the relevant ministry based on the user's query."""
-    # Define keywords for each ministry
-    ministry_keywords = {
-        "dmv": ["driver", "license", "vehicle", "registration", "dmv"],
-        "health": ["health", "insurance", "medical", "claim", "hospital"],
-        "education": ["scholarship", "student", "loan", "education", "university"],
-        "tax": ["tax", "refund", "filing", "income", "irs"],
-    }
-
-    # Check which ministry matches the query
-    for ministry, keywords in ministry_keywords.items():
-        if any(keyword in query.lower() for keyword in keywords):
-            return {"ministry": ministry}
-
-    return {"ministry": "general"}  # Default to "general" if no match
-
-# Function to get document links based on the ministry and query
-def get_documents_links(ministry_id, query):
-    if any(keyword in query.lower() for keyword in ["form", "document", "application", "download"]):
-        documents = DOCUMENTS_DB.get(ministry_id, [])
-        return {"documents": documents}
-    else:
-        return {"documents": []}
-
-
 
 def process_image_with_grok(base64_image: str) -> dict:
     try:
@@ -296,7 +187,77 @@ def generate_response_old(request: dict) -> str:
         raise HTTPException(status_code=500, detail=f"Error processing the request: {str(e)}")
 
 
+# Mapping of function names to implementations
+tools_map = {
+    "switch_prompt": switch_prompt,
+}
+
+# Main response generation function
 def generate_response(request: dict) -> str:
+    """
+    Handles user requests and dynamically adjusts prompts using tools.
+    """
+    messages = [
+        {"role": "user", "content": request['question']}
+    ]
+    
+    try:
+        # Initial API call with tools defined
+        response = client.chat.completions.create(
+            model=CHAT_MODEL_NAME,
+            messages=messages,
+            tools=tools_definition,
+            tool_choice="auto"
+        )
+        
+        # Process tool calls if the response includes them
+        if response.choices[0].message.tool_calls:
+            for tool_call in response.choices[0].message.tool_calls:
+                tool_name = tool_call.function.name
+                tool_args = json.loads(tool_call.function.arguments)
+                
+                # Execute the tool function and get results
+                result = tools_map[tool_name](**tool_args)
+                
+                # Append tool result to messages
+                messages.append(
+                    {
+                        "role": "tool",
+                        "content": json.dumps(result),
+                        "tool_call_id": tool_call.id
+                    }
+                )
+        
+        # Final API call with tool results
+        final_response = client.chat.completions.create(
+            model=CHAT_MODEL_NAME,
+            messages=messages,
+            tools=tools_definition,
+            tool_choice="auto"
+        )
+        
+        return final_response.choices[0].message.content
+    
+    except Exception as e:
+        logger.error(f"Error generating response: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error processing the request: {str(e)}")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+def generate_response_old(request: dict) -> str:
     """
     Generates a response based on the user's request and interaction.
     Supports all government ministries.
