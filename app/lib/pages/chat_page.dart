@@ -94,6 +94,7 @@ class _ChatBodyState extends State<ChatBody> {
               itemCount: apiProvider.messages.length,
               itemBuilder: (context, index) {
                 final message = apiProvider.messages[index];
+                print('Message #$index: ${message.message}');  // Debug print to track messages
                 return ChatBubble(
                   message: message.message,
                   isUserMessage: message.isUserMessage,
@@ -103,6 +104,7 @@ class _ChatBodyState extends State<ChatBody> {
             ),
           ),
         ),
+
         if (apiProvider.isLoading)
           Padding(
             padding: const EdgeInsets.all(8.0),
