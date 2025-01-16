@@ -44,8 +44,10 @@ class ApiProvider with ChangeNotifier {
   
   try {
     _setLoading(true);
+    
+    // Add the user's message to the list
     _addMessage(Message(message: question, isUserMessage: true));
-
+    
     var response = await http.post(
       url,
       headers: {'Content-Type': 'application/json; charset=utf-8'},
@@ -56,12 +58,14 @@ class ApiProvider with ChangeNotifier {
       var responseBody = utf8.decode(response.bodyBytes);
       var responseData = json.decode(responseBody);
 
-      // The response is now a single string, so no need to check for List
-      String serverResponse = responseData;  // Directly assign the response data as a string
+      String serverResponse = responseData;
+      print("Assistant's response: $serverResponse");  // Debug print to confirm message
+
+      // Add assistant's response to the message list
       _addMessage(Message(
         message: serverResponse,
         isUserMessage: false,
-        isMarkdown: false,
+        isMarkdown: true,
       ));
     } else {
       throw Exception('Failed to load response');
