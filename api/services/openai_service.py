@@ -2,7 +2,7 @@ import logging
 from openai import OpenAI
 from fastapi import HTTPException
 import os
-from api.services.tools_funciton import switch_prompt, get_service_links_us 
+from api.services.tools_funciton import switch_prompt, get_service_links_us, tools_definition
 import asyncio
 import json
 
@@ -195,7 +195,7 @@ def generate_response_old(request: dict) -> str:
         logger.error(f"Error generating response: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error processing the request: {str(e)}")
 
-async def generate_response(request: dict) -> str:
+def generate_response(request: dict) -> str:
     logger.info(f"Received question: {request['question']}")
     base_messages = [
         {
@@ -208,29 +208,35 @@ async def generate_response(request: dict) -> str:
     
     # Append user query to base messages
     base_messages.append({"role": "user", "content": request['question']})
+    logger.info("Base messages set up")
 
     # Initialize the message list that will be sent to the model
     messages = base_messages.copy()
 
     try:
-        # Request response from OpenAI model
-        response = await client.chat.completions.create(
-            model=CHAT_MODEL_NAME,
+        # Request response from OpenAI model (no await because it's synchronous)
+        logger.info("Requesting response from OpenAI model")
+        response = client.chat.completions.create(
+            model="grok-2-latest",
             messages=messages,
             tools=tools_definition,  # Ensure this is passed in
             tool_choice="auto"
         )
+        logger.info("Response received from OpenAI model")
         
         # Process tool calls concurrently if present
         tool_calls = response.choices[0].message.tool_calls
         if tool_calls:
+            logger.info(f"Processing {len(tool_calls)} tool calls")
             tasks = []
             for tool_call in tool_calls:
                 tool_name = tool_call.function.name
                 tool_args = json.loads(tool_call.function.arguments)
+                logger.debug(f"Tool call: {tool_name}, Args: {tool_args}")
                 tasks.append(execute_tool(tool_name, tool_args))
 
-            results = await asyncio.gather(*tasks)
+            results = [task for task in tasks]  # Handling tool calls sequentially since it's not async
+            logger.info("Tool calls completed, processing results")
             for result in results:
                 messages.append({
                     "role": "tool",
@@ -238,13 +244,15 @@ async def generate_response(request: dict) -> str:
                     "tool_call_id": tool_call.id
                 })
 
-        # Final response generation
-        final_response = await client.chat.completions.create(
-            model=CHAT_MODEL_NAME,
+        # Final response generation (again, no await because it's synchronous)
+        logger.info("Requesting final response from OpenAI model")
+        final_response = client.chat.completions.create(
+            model="grok-2-latest",
             messages=messages,
             tools=tools_definition,  # Ensure this is passed in
             tool_choice="auto"
         )
+        logger.info("Final response received from OpenAI model")
 
         # Return the final response content
         return final_response.choices[0].message.content
@@ -255,7 +263,4 @@ async def generate_response(request: dict) -> str:
         raise HTTPException(status_code=500, detail=f"Error processing the request: {str(e)}")
 
 
-
-
-
-
+    

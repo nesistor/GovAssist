@@ -9,16 +9,9 @@ import logging
 import os
 
 logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
-
-# Mock database containing document information
-DOCUMENTS_DB = {
-    "driver_license_application": {
-        "document_name": "Driver's License Application Form",
-        "url": "https://www.dps.texas.gov/internetforms/forms/dl-14a.pdf"
-    },
-}
 
 @router.get("/initial-message", response_model=str)
 def initial_message():
@@ -38,6 +31,7 @@ def get_options():
 # API endpoint for document validation
 @router.post("/validate-document")
 async def validate_document(file: UploadFile):
+    logger.debug(f"Received file: {file.filename}, content_type: {file.content_type}")
     if file.content_type not in ["image/jpeg", "image/png", "application/pdf"]:
         raise HTTPException(status_code=400, detail="Unsupported file type. Only JPEG, PNG, and PDF are allowed.")
 
@@ -49,6 +43,7 @@ async def validate_document(file: UploadFile):
                 temp_pdf.write(file.file.read())
                 temp_pdf.flush()
                 images = convert_pdf_to_images(temp_pdf.name)
+                logger.debug(f"Converted PDF to {len(images)} images.")
                 base64_images = [pil_image_to_base64(image) for image in images]
         else:
             base64_image = encode_image_to_base64(file.file)
@@ -56,24 +51,27 @@ async def validate_document(file: UploadFile):
 
         # Process image with Grok Vision Model
         aggregated_results = [process_image_with_grok(base64_image) for base64_image in base64_images]
+        logger.debug(f"Processed images with Grok Vision Model. Results: {aggregated_results}")
 
         # Further processing with the Grok Text model
         response = process_document_with_text_model(aggregated_results)
+        logger.debug(f"Processed document with Grok Text Model. Response: {response}")
         return response
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error processing the document: {str(e)}")
 
-@router.post("/generate-response", response_model=List[str])
+@router.post("/generate-response", response_model=str)
 def ask_question(request: QuestionRequest):
-    """
-    Responds to user's question, potentially including document links.
-    """
     try:
-        print(f"Received request data: {request.dict()}")
+        logger.debug(f"Received request data: {request}")
+        
+        # Call generate_response synchronously (no await)
         response = generate_response(request.dict())
-        print(f"Generated response: {response}")
-        return [response]
+        
+        logger.debug(f"Generated response: {response}")
+        return response  # Return the response directly
+        
     except Exception as e:
-        print(f"Error: {str(e)}")
+        logger.error(f"Error occurred while processing the request: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error processing the request: {str(e)}")
