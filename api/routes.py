@@ -61,7 +61,7 @@ def validate_document(file: UploadFile):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error processing the document: {str(e)}")
 
-@router.post("/generate-response", response_model=str)
+@router.post("/generate-response", response_model=List[str])
 def ask_question(request: QuestionRequest):
     try:
         logger.debug(f"Received request data: {request}")
