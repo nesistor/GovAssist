@@ -183,7 +183,7 @@ def generate_response(request: dict) -> str:
         )
         logger.info("Response received from OpenAI model")
 
-        # Process tool calls concurrently if present
+        # Check for tool calls in the response
         tool_calls = response.choices[0].message.tool_calls
         if tool_calls:
             logger.info(f"Processing {len(tool_calls)} tool calls")
@@ -194,14 +194,20 @@ def generate_response(request: dict) -> str:
                 logger.debug(f"Tool call: {tool_name}, Args: {tool_args}")
                 tasks.append(execute_tool(tool_name, tool_args))
 
-            results = [task for task in tasks]  # Handling tool calls sequentially since it's not async
+            # Wait for tasks to complete and process the results
+            results = [task for task in tasks]
             logger.info("Tool calls completed, processing results")
+
             for result in results:
+                # Check if result contains a valid link
                 if "link" in result:
                     final_response = f"Here is the link for driving license in Texas: {result['link']}"
+                elif "message" in result:
+                    final_response = f"Message from tool: {result['message']}"  # Handling cases where there's a message instead of a link
                 else:
-                    final_response = "Sorry, I couldn't find a valid link for the service."
+                    final_response = "Sorry, I couldn't find a valid link or message for the service."
 
+                # Add the result content to the base messages
                 base_messages.append({
                     "role": "tool",
                     "content": json.dumps(result),
