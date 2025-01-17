@@ -63,6 +63,28 @@ class _ChatBodyState extends State<ChatBody> {
     }
   }
 
+  void _handleFileAttachment() async {
+    FilePickerResult? result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['pdf', 'docx'],
+    );
+
+    if (result != null) {
+      Uint8List fileBytes = result.files.first.bytes!;
+      String fileName = result.files.first.name;
+
+      final apiProvider = Provider.of<ApiProvider>(context, listen: false);
+      await apiProvider.uploadDocument(fileBytes, fileName);
+
+      // Scroll to bottom after the document response is added
+      _scrollToBottom();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No file selected')),
+      );
+    }
+  }
+
   void _handleButtonPress(String text) {
     _controller.text = text;
     _sendMessage();
@@ -94,7 +116,6 @@ class _ChatBodyState extends State<ChatBody> {
               itemCount: apiProvider.messages.length,
               itemBuilder: (context, index) {
                 final message = apiProvider.messages[index];
-                print('Message #$index: ${message.message}');  // Debug print to track messages
                 return ChatBubble(
                   message: message.message,
                   isUserMessage: message.isUserMessage,
@@ -104,7 +125,6 @@ class _ChatBodyState extends State<ChatBody> {
             ),
           ),
         ),
-
         if (apiProvider.isLoading)
           Padding(
             padding: const EdgeInsets.all(8.0),
@@ -125,24 +145,7 @@ class _ChatBodyState extends State<ChatBody> {
             children: [
               IconButton(
                 icon: const Icon(Icons.attach_file, color: Colors.white),
-                onPressed: () async {
-                  FilePickerResult? result = await FilePicker.platform.pickFiles(
-                    type: FileType.custom,
-                    allowedExtensions: ['pdf', 'docx'],
-                  );
-  
-                  if (result != null) {
-                    Uint8List fileBytes = result.files.first.bytes!;
-                    String fileName = result.files.first.name;
-  
-                    final apiProvider = Provider.of<ApiProvider>(context, listen: false);
-                    await apiProvider.uploadDocument(fileBytes, fileName);
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('No file selected')),
-                    );
-                  }
-                },
+                onPressed: _handleFileAttachment,
               ),
               Expanded(
                 child: TextField(

@@ -40,57 +40,48 @@ class ApiProvider with ChangeNotifier {
   }
 
   Future<void> uploadDocument(Uint8List fileBytes, String fileName) async {
-    var url = Uri.parse('https://government-assistant-api-183025368636.us-central1.run.app/validate-document');
-    try {
+  var url = Uri.parse('https://government-assistant-api-183025368636.us-central1.run.app/validate-document');
+  try {
+    _setLoading(true); // Set loading state to true
+    String mimeType = _detectMimeType(fileName);
+
+    var request = http.MultipartRequest('POST', url);
+    request.files.add(http.MultipartFile.fromBytes(
+      'file',
+      fileBytes,
+      filename: fileName,
+      contentType: MediaType.parse(mimeType),
+    ));
+
+    var streamedResponse = await request.send();
+    var response = await http.Response.fromStream(streamedResponse);
+
+    if (response.statusCode == 200) {
+      var responseBody = utf8.decode(response.bodyBytes);
+      var responseData = json.decode(responseBody);
+
+      String resultMessage = responseData['content'] ?? 'No content available';
       _addMessage(Message(
-        message: 'Uploading document...',
-        isUserMessage: true,
+        message: resultMessage,
+        isUserMessage: false,
+        isMarkdown: true,
       ));
-
-      String mimeType = _detectMimeType(fileName);
-
-      var request = http.MultipartRequest('POST', url);
-      request.files.add(http.MultipartFile.fromBytes(
-        'file',
-        fileBytes,
-        filename: fileName,
-        contentType: MediaType.parse(mimeType),
-      ));
-
-      var streamedResponse = await request.send();
-      var response = await http.Response.fromStream(streamedResponse);
-
-      if (response.statusCode == 200) {
-        var responseBody = utf8.decode(response.bodyBytes);
-        var responseData = json.decode(responseBody);
-
-        String resultMessage = responseData['content'] ?? 'No content available';
-        _addMessage(Message(
-          message: resultMessage,
-          isUserMessage: false,
-          isMarkdown: true,
-        ));
-      } else if (response.statusCode == 400) {
-        var responseBody = utf8.decode(response.bodyBytes);
-        var responseData = json.decode(responseBody);
-
-        _addMessage(Message(
-          message: responseData['detail'] ?? 'Unsupported file type.',
-          isUserMessage: false,
-        ));
-      } else {
-        _addMessage(Message(
-          message: 'Document upload failed: ${response.reasonPhrase}',
-          isUserMessage: false,
-        ));
-      }
-    } catch (e) {
+    } else {
       _addMessage(Message(
-        message: 'Error occurred: $e',
+        message: 'Document upload failed: ${response.reasonPhrase}',
         isUserMessage: false,
       ));
     }
+  } catch (e) {
+    _addMessage(Message(
+      message: 'Error occurred: $e',
+      isUserMessage: false,
+    ));
+  } finally {
+    _setLoading(false); // Set loading state to false
   }
+}
+
 
   Future<void> generateResponse(String question) async {
   var url = Uri.parse('https://government-assistant-api-183025368636.us-central1.run.app/generate-response');
