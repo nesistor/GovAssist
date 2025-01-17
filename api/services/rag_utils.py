@@ -1,4 +1,4 @@
-from embedding_service import query_collection
+from api.services.embedding_service import query_collection
 from typing import List
 from openai import OpenAI
 import os
@@ -24,7 +24,7 @@ def generate_answer_with_context(query: str, context_documents: List[str]) -> st
     augmented_prompt = f"Based on the following context: '{context_str}', answer the question: '{query}'"
 
     try:
-        response = rag_client.chat.completions.create(
+        response = rag_client.chat.completions.create(  
             model=CHAT_MODEL_NAME,
             messages=[
                 {

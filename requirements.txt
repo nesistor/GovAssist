@@ -8,3 +8,4 @@ pdf2image
 python-multipart
 PyPDF2
 requests
+chromadb
