@@ -1,5 +1,6 @@
 import requests
 from typing import Dict
+from api.services.rag_utils import retrieve_relevant_documents, generate_answer_with_context  # Import RAG functions
 
 
 MINISTRY_PROMPTS = {
@@ -55,8 +56,21 @@ def get_service_links_us(state: str, service_type: str) -> Dict[str, str]:
     return {"link": links[service_type]}
 
 
+# Tool function to use RAG
+def retrieve_and_answer(query: str, ministry: str) -> Dict[str, str]:
+    """
+    Retrieves relevant documents based on the query and ministry, and then generates an answer.
+    """
+    relevant_docs = retrieve_relevant_documents(query, ministry)
+    if not relevant_docs:
+        return {"answer": "I couldn't find any relevant documents to answer your question."}
 
-# Define tools for function calling
+    answer = generate_answer_with_context(query, relevant_docs)
+    return {"answer": answer}
+
+
+
+# Define tools for function calling (Updated with RAG tool)
 tools_definition = [
     {
         "type": "function",
@@ -95,13 +109,29 @@ tools_definition = [
                 "required": ["state", "service_type"]
             }
         }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "retrieve_and_answer",
+            "description": "Retrieves relevant documents and answers the question based on them.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "query": {
+                        "type": "string",
+                        "description": "The user's query or question."
+                    },
+                    "ministry": {
+                        "type": "string",
+                        "description": "The relevant ministry, e.g., 'dmv', 'tax'."
+                    }
+                },
+                "required": ["query", "ministry"]
+            }
+        }
     }
 ]
-
-
-
-
-
 
 
 

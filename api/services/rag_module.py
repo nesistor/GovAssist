@@ -28,7 +28,7 @@ def index_documents(documents):
     for category, docs in documents.items():
         category_embeddings = []
         for doc in docs:
-            chunks = [doc["content"]]  # Simplified chunking for demo purposes
+            chunks = [doc["content"]]  
             embeddings = model.encode(chunks)
             category_embeddings.append({"document_name": doc["document_name"], "chunks": chunks, "embeddings": embeddings})
         indexed_data[category] = category_embeddings
@@ -40,7 +40,7 @@ def retrieve_relevant_chunks(query, category):
     """Retrieve the most relevant chunks for a query."""
     try:
         if category not in indexed_documents:
-            raise ValueError(f"Category '{category}' not found.")
+            raise ValueError(f"Category '{category}' not found.")   
 
         query_embedding = model.encode([query])
         relevant_chunks = []

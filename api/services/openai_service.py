@@ -180,7 +180,7 @@ def generate_response(request: dict) -> str:
         logger.info("Response received from OpenAI model")
 
         # Retrieve model's response
-        model_response = response.choices[0].message.content
+        model_response = response.choices[0].message
 
         # Process tool calls if present
         tool_calls = response.choices[0].message.tool_calls
@@ -191,19 +191,36 @@ def generate_response(request: dict) -> str:
                 tool_args = json.loads(tool_call.function.arguments)
                 logger.debug(f"Tool call: {tool_name}, Args: {tool_args}")
 
+                # Add ministry context to tool arguments if available
+                if ministry and tool_name == "retrieve_and_answer":
+                    tool_args["ministry"] = ministry
+
                 # Execute the tool call
+                if tool_name == "retrieve_and_answer":
+                    # Pass the user's question and ministry to the tool
+                    tool_args["query"] = question
+                    tool_args["ministry"] = ministry
                 result = execute_tool(tool_name, tool_args)
 
-                # Process the tool result
-                if "link" in result:
+                # Handle RAG tool result
+                if tool_name == "retrieve_and_answer":
+                    if "answer" in result:
+                        final_response = result["answer"]
+                    else:
+                        final_response = "I couldn't find an answer using the available tools."
+                    break  # Exit loop after RAG tool as it provides the final answer
+
+                # Process other tool results (e.g., get_service_links_us)
+                elif "link" in result:
                     final_response = f"Here is the link for driving license in Texas: {result['link']}"
                     break  # Exit the loop as we have a valid response
+
             else:
                 # If no valid tool response, use the model's original response
-                final_response = model_response
+                final_response = model_response.content
         else:
             # If no tool calls, use the model's response
-            final_response = model_response
+            final_response = model_response.content
 
         # Add the final response to the conversation history
         user_conversations[user_id].append({"role": "assistant", "content": final_response})
