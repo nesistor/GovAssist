@@ -51,7 +51,10 @@ class ApiProvider with ChangeNotifier {
     var response = await http.post(
       url,
       headers: {'Content-Type': 'application/json; charset=utf-8'},
-      body: json.encode({'question': question}),
+      body: json.encode({
+        'user_id': 1,  // Always send user_id as 1
+        'question': question
+      }),
     );
 
     if (response.statusCode == 200) {
@@ -79,6 +82,7 @@ class ApiProvider with ChangeNotifier {
     _setLoading(false);
   }
 }
+
 
   void _addMessage(Message message) {
     _messages.add(message);
