@@ -131,14 +131,6 @@ def process_document_with_text_model(aggregated_results: list) -> dict:
 # A dictionary to store the conversation context per user (in a real scenario, this could be a database)
 user_conversations = {}
 
-def process_image_with_grok(base64_image: str) -> dict:
-    # Existing image processing function
-    pass
-
-def process_document_with_text_model(aggregated_results: list) -> dict:
-    # Existing document processing function
-    pass
-
 def generate_response(request: dict) -> str:
     user_id = request.get('user_id')
     question = request.get('question')
