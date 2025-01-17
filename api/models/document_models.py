@@ -7,6 +7,7 @@ class DocumentCheckResult(BaseModel):
     errors: List[str]
 
 class QuestionRequest(BaseModel):
+    user_id: int
     question: str
 
 class DocumentRequest(BaseModel):
