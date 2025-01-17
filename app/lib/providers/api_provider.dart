@@ -52,7 +52,7 @@ class ApiProvider with ChangeNotifier {
       url,
       headers: {'Content-Type': 'application/json; charset=utf-8'},
       body: json.encode({
-        'user_id': 1,  // Always send user_id as 1
+        'user_id': "1",  // Always send user_id as 1
         'question': question
       }),
     );
