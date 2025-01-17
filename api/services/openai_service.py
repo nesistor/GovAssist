@@ -20,6 +20,15 @@ tools_map = {
     "get_service_links_us": get_service_links_us,
 }
 
+def execute_tool(tool_name: str, tool_args: dict) -> dict:
+    # Check if the tool name exists in the tools map
+    if tool_name in tools_map:
+        tool_function = tools_map[tool_name]
+        # Call the corresponding function with the provided arguments
+        return tool_function(**tool_args)
+    else:
+        raise ValueError(f"Tool {tool_name} not found")
+
 def process_image_with_grok(base64_image: str) -> dict:
     try:
         logger.debug("Sending request to Grok Vision model.")
