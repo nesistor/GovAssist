@@ -123,12 +123,31 @@ class _ChatBodyState extends State<ChatBody> {
           padding: const EdgeInsets.all(8.0),
           child: Row(
             children: [
-              IconButton(
+              return IconButton(
                 icon: const Icon(Icons.attach_file, color: Colors.white),
-                onPressed: () {
-                  // Add your document attachment function here
+                onPressed: () async {
+                  // Pick a file
+                  FilePickerResult? result = await FilePicker.platform.pickFiles(
+                    type: FileType.custom,
+                    allowedExtensions: ['pdf', 'docx'], // Limit file types
+                  );
+
+                  if (result != null) {
+                    // Retrieve file bytes and name
+                    Uint8List fileBytes = result.files.first.bytes!;
+                    String fileName = result.files.first.name;
+
+                    // Upload document using ApiProvider
+                    final apiProvider = Provider.of<ApiProvider>(context, listen: false);
+                    await apiProvider.uploadDocument(fileBytes, fileName);
+                  } else {
+                   // User canceled the picker
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('No file selected')),
+                  );
+                  }
                 },
-              ),
+              );
               Expanded(
                 child: TextField(
                   controller: _controller,
