@@ -128,8 +128,34 @@ def process_document_with_text_model(aggregated_results: list) -> dict:
         logger.error("Error processing document: %s", str(e))
         raise HTTPException(status_code=500, detail=f"Error processing document: {str(e)}")
 
+# A dictionary to store the conversation context per user (in a real scenario, this could be a database)
+user_conversations = {}
+
+def process_image_with_grok(base64_image: str) -> dict:
+    # Existing image processing function
+    pass
+
+def process_document_with_text_model(aggregated_results: list) -> dict:
+    # Existing document processing function
+    pass
+
 def generate_response(request: dict) -> str:
-    logger.info(f"Received question: {request['question']}")
+    user_id = request.get('user_id')
+    question = request.get('question')
+
+    if not user_id:
+        raise HTTPException(status_code=400, detail="User ID is required")
+
+    logger.info(f"Received question: {question} from user ID: {user_id}")
+
+    # Initialize user context if it doesn't exist
+    if user_id not in user_conversations:
+        user_conversations[user_id] = []
+
+    # Add the new question to the conversation history
+    user_conversations[user_id].append({"role": "user", "content": question})
+
+    # Build the base messages with the current context
     base_messages = [
         {
             "role": "system",
@@ -138,20 +164,16 @@ def generate_response(request: dict) -> str:
                        "My goal is to simplify processes and make things clear with a little bit of humor along the way."
         }
     ]
-    
-    # Append user query to base messages
-    base_messages.append({"role": "user", "content": request['question']})
-    logger.info("Base messages set up")
 
-    # Initialize the message list that will be sent to the model
-    messages = base_messages.copy()
+    # Append all prior conversation messages for the user
+    base_messages.extend(user_conversations[user_id])
 
+    # Request response from OpenAI model (synchronous call)
     try:
-        # Request response from OpenAI model (no await because it's synchronous)
         logger.info("Requesting response from OpenAI model")
         response = client.chat.completions.create(
             model="grok-2-latest",
-            messages=messages,
+            messages=base_messages,
             tools=tools_definition,  # Ensure this is passed in
             tool_choice="auto"
         )
@@ -171,29 +193,22 @@ def generate_response(request: dict) -> str:
             results = [task for task in tasks]  # Handling tool calls sequentially since it's not async
             logger.info("Tool calls completed, processing results")
             for result in results:
-                messages.append({
+                base_messages.append({
                     "role": "tool",
                     "content": json.dumps(result),
                     "tool_call_id": tool_call.id
                 })
 
-        # Final response generation (again, no await because it's synchronous)
-        logger.info("Requesting final response from OpenAI model")
-        final_response = client.chat.completions.create(
-            model="grok-2-latest",
-            messages=messages,
-            tools=tools_definition,  # Ensure this is passed in
-            tool_choice="auto"
-        )
+        # Add the final response to the conversation history
+        final_response = response.choices[0].message.content
+        user_conversations[user_id].append({"role": "assistant", "content": final_response})
+
         logger.info("Final response received from OpenAI model")
 
         # Return the final response content
-        return final_response.choices[0].message.content
+        return final_response
 
     except Exception as e:
         # Log and raise error
         logger.error(f"Error generating response: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error processing the request: {str(e)}")
-
-
-    
