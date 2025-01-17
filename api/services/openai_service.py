@@ -169,51 +169,48 @@ def generate_response(request: dict) -> str:
     # Append all prior conversation messages for the user
     base_messages.extend(user_conversations[user_id])
 
-    # Request response from OpenAI model (synchronous call)
     try:
         logger.info("Requesting response from OpenAI model")
         response = client.chat.completions.create(
             model="grok-2-latest",
             messages=base_messages,
-            tools=tools_definition,  # Ensure this is passed in
+            tools=tools_definition,
             tool_choice="auto"
         )
         logger.info("Response received from OpenAI model")
 
-        # Process tool calls concurrently if present
+        # Retrieve model's response
+        model_response = response.choices[0].message.content
+
+        # Process tool calls if present
         tool_calls = response.choices[0].message.tool_calls
         if tool_calls:
             logger.info(f"Processing {len(tool_calls)} tool calls")
-            tasks = []
             for tool_call in tool_calls:
                 tool_name = tool_call.function.name
                 tool_args = json.loads(tool_call.function.arguments)
                 logger.debug(f"Tool call: {tool_name}, Args: {tool_args}")
-                tasks.append(execute_tool(tool_name, tool_args))
 
-            results = [task for task in tasks]  # Handling tool calls sequentially since it's not async
-            logger.info("Tool calls completed, processing results")
-            for result in results:
+                # Execute the tool call
+                result = execute_tool(tool_name, tool_args)
+
+                # Process the tool result
                 if "link" in result:
                     final_response = f"Here is the link for driving license in Texas: {result['link']}"
-                else:
-                    final_response = "Sorry, I couldn't find a valid link for the service."
-
-                base_messages.append({
-                    "role": "tool",
-                    "content": json.dumps(result),
-                    "tool_call_id": tool_call.id
-                })
+                    break  # Exit the loop as we have a valid response
+            else:
+                # If no valid tool response, use the model's original response
+                final_response = model_response
+        else:
+            # If no tool calls, use the model's response
+            final_response = model_response
 
         # Add the final response to the conversation history
         user_conversations[user_id].append({"role": "assistant", "content": final_response})
 
-        logger.info("Final response received from OpenAI model")
-
-        # Return the final response content
+        logger.info("Final response processed successfully")
         return final_response
 
     except Exception as e:
-        # Log and raise error
         logger.error(f"Error generating response: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error processing the request: {str(e)}")
