@@ -179,7 +179,7 @@ def generate_response(request: dict) -> str:
             tool_choice="auto"
         )
         logger.info("Response received from OpenAI model")
-        
+
         # Process tool calls concurrently if present
         tool_calls = response.choices[0].message.tool_calls
         if tool_calls:
@@ -194,6 +194,11 @@ def generate_response(request: dict) -> str:
             results = [task for task in tasks]  # Handling tool calls sequentially since it's not async
             logger.info("Tool calls completed, processing results")
             for result in results:
+                if "link" in result:
+                    final_response = f"Here is the link for driving license in Texas: {result['link']}"
+                else:
+                    final_response = "Sorry, I couldn't find a valid link for the service."
+
                 base_messages.append({
                     "role": "tool",
                     "content": json.dumps(result),
@@ -201,7 +206,6 @@ def generate_response(request: dict) -> str:
                 })
 
         # Add the final response to the conversation history
-        final_response = response.choices[0].message.content
         user_conversations[user_id].append({"role": "assistant", "content": final_response})
 
         logger.info("Final response received from OpenAI model")
