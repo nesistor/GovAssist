@@ -169,6 +169,9 @@ def generate_response(request: dict) -> str:
     # Append all prior conversation messages for the user
     base_messages.extend(user_conversations[user_id])
 
+    # Initialize final_response with a default message
+    final_response = "Sorry, I couldn't find an answer to your question."
+
     # Request response from OpenAI model (synchronous call)
     try:
         logger.info("Requesting response from OpenAI model")
