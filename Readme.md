@@ -1,4 +1,4 @@
-![Government Assistant Logo](https://i.ibb.co/Y3qzkGg/logo-full-copy.png)
+![Government Assistant Logo](https://github.com/nesistor/GovGiggler/blob/main/GovAssist.png)
 
 # GovAssist: A Smart Government Assistant Powered by Grok AI
 
@@ -17,7 +17,7 @@
 
 ## 🚀 Project Vision: Redefining Government Services
 
-**GovAssist** reshapes the interaction with government systems by being:
+**GovLinker** reshapes the interaction with government systems by being:
 
 - **Effortless**: Guides users through complex bureaucratic processes with ease.
 - **Accurate**: Ensures error-free submissions through advanced AI checks.
@@ -34,7 +34,7 @@ Whether it’s booking appointments, verifying identity, or solving problems dur
 - **Problem Solving with Grok-Vision-Beta**:
   - Helps identify missing fields or errors when filling out documents manually.
   - Provides entertaining and humorous suggestions for solving common form-related issues.
-- **Appointment Scheduling**: **GovAssist** helps users book appointments with government offices and embassies for necessary document submissions.
+- **Appointment Scheduling**: **GovLinker** helps users book appointments with government offices and embassies for necessary document submissions.
 - **Bank-Level Authentication**: Verifies your identity using your banking app for added security when scheduling appointments or accessing government services.
 
 ---
@@ -93,6 +93,13 @@ Whether it’s booking appointments, verifying identity, or solving problems dur
 - **Businesses**: Automates compliance and regulatory processes.
 - **Government Agencies**: Reduces administrative workload and improves service delivery.
 
+---
+
+## 🤖 Fun and Efficiency Combined
+
+GovLinker isn’t just a tool—it’s a companion! It lightens the often frustrating bureaucratic experience with lighthearted humor and engaging interactions. Here’s what you’ll love:
+- **Joke Mode**: “Paperwork is hard, but jokes are easy. Let’s fix that missing signature and your day!”
+- **Emoji Responses**: Adds a bit of fun to every step. 📑✅
 
 ---
 
@@ -108,13 +115,13 @@ Whether it’s booking appointments, verifying identity, or solving problems dur
 
 ## 🤝 **Contributing**
 
-We welcome contributions to **GovAssist**! Please follow these steps:
+We welcome contributions to **GovLinker**! Please follow these steps:
 
 1. **Fork** the repository by clicking the "Fork" button in the top-right corner of this page.
 
 2. **Clone** the forked repository to your local machine:
    ```bash
-   git clone https://github.com/nesistor/GovAssist.git
+   git clone https://github.com/nesistor/GovLinker.git
    ```
 
 3. **Create a new branch** for your feature:
@@ -140,5 +147,17 @@ We welcome contributions to **GovAssist**! Please follow these steps:
 
 This project is licensed under the MIT License. See the LICENSE file for details.
 
+---
 
+## Crypto Wallet 💰
+
+If you prefer to donate via cryptocurrency, here is our wallet address:
+
+
+**Ethereum (Erc-20 and BEP-20):**
+`0x97aE86a5e4b434ec0bEd6A82EE2A079C938886dA`
+
+Thank you for your support!
+
+GovLinker is designed to revolutionize bureaucratic processes and leave a lasting impact on users and stakeholders alike.
 
