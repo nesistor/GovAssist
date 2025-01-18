@@ -145,19 +145,4 @@ We welcome contributions to **GovLinker**! Please follow these steps:
 
 ## 📄 **License**
 
-This project is licensed under the MIT License. See the LICENSE file for details.
-
 ---
-
-## Crypto Wallet 💰
-
-If you prefer to donate via cryptocurrency, here is our wallet address:
-
-
-**Ethereum (Erc-20 and BEP-20):**
-`0x97aE86a5e4b434ec0bEd6A82EE2A079C938886dA`
-
-Thank you for your support!
-
-GovLinker is designed to revolutionize bureaucratic processes and leave a lasting impact on users and stakeholders alike.
-
