@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'providers/api_provider.dart';
-import 'package:government_assistant/pages/chat_page/chat_page.dart';
+import 'pages/chat_page/chat_page.dart';
+import 'package:government_assistant/theme/theme_data.dart';
 
 void main() {
   runApp(const MyApp());
@@ -16,17 +17,7 @@ class MyApp extends StatelessWidget {
       create: (_) => ApiProvider(),
       child: MaterialApp(
         title: 'GovAssist',
-        theme: ThemeData(
-          scaffoldBackgroundColor: Colors.black, // Black background for the whole app
-          appBarTheme: const AppBarTheme(
-            backgroundColor: Colors.deepPurple, // Purple app bar color
-          ),
-          textTheme: const TextTheme(
-            bodyLarge: TextStyle(color: Colors.white), // White text color for the body
-          ),
-          colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-          useMaterial3: true,
-        ),
+        theme: appThemeData, // Używamy ThemeData z theme_data.dart
         home: const ChatPage(),
         debugShowCheckedModeBanner: false,
       ),

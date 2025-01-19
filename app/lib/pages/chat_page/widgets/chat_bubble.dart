@@ -33,7 +33,9 @@ class ChatBubble extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // If message is Markdown, render it as Markdown, otherwise convert HTML to Markdown
-    final String renderedMessage = isMarkdown ? message : _convertHtmlToMarkdown(message);
+    final String renderedMessage = isMarkdown
+        ? message
+        : _convertHtmlToMarkdown(message);
 
     return Align(
       alignment: isUserMessage ? Alignment.centerRight : Alignment.centerLeft,
@@ -41,16 +43,22 @@ class ChatBubble extends StatelessWidget {
         padding: const EdgeInsets.all(8.0),
         child: Container(
           decoration: BoxDecoration(
-            color: isUserMessage ? Colors.black : Colors.grey[800], // Black for user, grey for response
+            color: isUserMessage
+                ? Colors.black
+                : Theme
+                .of(context)
+                .cardColor, // Szary kolor z ThemeData
             borderRadius: BorderRadius.circular(12),
             border: isUserMessage
-                ? Border.all(color: Colors.deepPurple, width: 2) // Purple border for user message
+                ? Border.all(color: Colors.deepPurple,
+                width: 2) // Purple border for user message
                 : null, // No border for response
           ),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: MarkdownBody(
             data: renderedMessage,
-            styleSheet: MarkdownStyleSheet.fromTheme(Theme.of(context)).copyWith(
+            styleSheet: MarkdownStyleSheet.fromTheme(Theme.of(context))
+                .copyWith(
               p: TextStyle(
                 color: Colors.white, // White text for both user and response
                 fontWeight: isUserMessage ? FontWeight.normal : FontWeight.bold,
