@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'providers/api_provider.dart';
-import 'pages/chat_page.dart';
+import 'package:government_assistant/pages/chat_page/chat_page.dart';
 
 void main() {
   runApp(const MyApp());

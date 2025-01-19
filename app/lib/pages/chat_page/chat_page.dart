@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../providers/api_provider.dart';
-import '../widgets/button_row.dart'; // Assuming ButtonRow is in a separate file
-import '../widgets/chat_bubble.dart'; // Assuming ChatBubble is in a separate file
+import 'package:government_assistant/providers/api_provider.dart';
+import 'package:government_assistant/pages/chat_page/widgets/side_bar.dart';
+import 'package:government_assistant/pages/chat_page/widgets/chat_bubble.dart';
+import 'package:government_assistant/pages/chat_page/widgets/button_row.dart';
 import 'package:file_picker/file_picker.dart';
 import 'dart:typed_data';
 
@@ -12,19 +13,12 @@ class ChatPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'GovAssist',
-          style: TextStyle(
-            color: Colors.white, 
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        backgroundColor: Colors.grey[800], 
-        centerTitle: true,
-        elevation: 0, 
+      body: Row(
+        children: const [
+          SideBar(),
+          Expanded(child: ChatBody()),
+        ],
       ),
-      body: const ChatBody(),
     );
   }
 }
@@ -46,10 +40,7 @@ class _ChatBodyState extends State<ChatBody> {
     final apiProvider = Provider.of<ApiProvider>(context, listen: false);
     await apiProvider.generateResponse(_controller.text);
 
-    // Automatically scroll to the bottom after a new message is added
     _scrollToBottom();
-
-    // Clear the input text field after sending the message
     _controller.clear();
   }
 
@@ -76,7 +67,6 @@ class _ChatBodyState extends State<ChatBody> {
       final apiProvider = Provider.of<ApiProvider>(context, listen: false);
       await apiProvider.uploadDocument(fileBytes, fileName);
 
-      // Scroll to bottom after the document response is added
       _scrollToBottom();
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -96,17 +86,22 @@ class _ChatBodyState extends State<ChatBody> {
 
     return Column(
       children: [
-        if (apiProvider.initialMessage.isNotEmpty) 
+        if (apiProvider.initialMessage.isNotEmpty)
           Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Text(
-              apiProvider.initialMessage,
-              style: const TextStyle(fontSize: 16, color: Colors.white),
+            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ChatBubble(
+                  message: apiProvider.initialMessage,
+                  isUserMessage: false,
+                  isMarkdown: false,
+                ),
+                const SizedBox(height: 4),
+                ButtonRow(onButtonPressed: _handleButtonPress),
+              ],
             ),
           ),
-        Center(
-          child: ButtonRow(onButtonPressed: _handleButtonPress),
-        ),
         Expanded(
           child: Scrollbar(
             controller: _scrollController,
@@ -116,10 +111,13 @@ class _ChatBodyState extends State<ChatBody> {
               itemCount: apiProvider.messages.length,
               itemBuilder: (context, index) {
                 final message = apiProvider.messages[index];
-                return ChatBubble(
-                  message: message.message,
-                  isUserMessage: message.isUserMessage,
-                  isMarkdown: message.isMarkdown,
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: ChatBubble(
+                    message: message.message,
+                    isUserMessage: message.isUserMessage,
+                    isMarkdown: message.isMarkdown,
+                  ),
                 );
               },
             ),

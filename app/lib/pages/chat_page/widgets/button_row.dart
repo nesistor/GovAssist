@@ -10,7 +10,7 @@ class ButtonRow extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 10.0),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,  // This will center the buttons
+        mainAxisAlignment: MainAxisAlignment.start, // Wyrównanie przycisków do lewej
         children: [
           ElevatedButton(
             onPressed: () => onButtonPressed("Driving License"),
@@ -19,7 +19,7 @@ class ButtonRow extends StatelessWidget {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
-              minimumSize: const Size(100, 40), // Square button dimensions
+              minimumSize: const Size(100, 40), // Wymiary przycisku
             ),
             child: const Text("Driving License", style: TextStyle(color: Colors.white)),
           ),
