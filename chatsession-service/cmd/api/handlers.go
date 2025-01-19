@@ -4,14 +4,21 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
-	"time"
 
 	"chatsession-service/data"
 )
 
-// GetAllChatSessions retrieves all chat sessions.
+// GetAllChatSessions retrieves all chat sessions for a specific user.
 func (app *Config) GetAllChatSessions(w http.ResponseWriter, r *http.Request) {
-	sessions, err := app.Models.ChatSession.GetAllChatSessions()
+	userIDStr := r.URL.Query().Get("user_id") // Assuming you are passing user_id as a query param
+	userID, err := strconv.Atoi(userIDStr)
+	if err != nil {
+		app.errorJSON(w, fmt.Errorf("invalid user ID"), http.StatusBadRequest)
+		return
+	}
+
+	// Corrected method call: GetAllSessionsByUserID
+	sessions, err := app.Models.GetAllSessionsByUserID(int64(userID))
 	if err != nil {
 		app.errorJSON(w, err, http.StatusInternalServerError)
 		return
@@ -35,7 +42,8 @@ func (app *Config) GetChatSessionByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	session, err := app.Models.ChatSession.GetChatSessionByID(sessionID)
+	// Corrected method call: GetSessionByID
+	session, err := app.Models.GetSessionByID(int64(sessionID))
 	if err != nil {
 		app.errorJSON(w, err, http.StatusNotFound)
 		return
@@ -54,8 +62,7 @@ func (app *Config) GetChatSessionByID(w http.ResponseWriter, r *http.Request) {
 func (app *Config) CreateChatSession(w http.ResponseWriter, r *http.Request) {
 	var requestPayload struct {
 		UserID      int    `json:"user_id"`
-		StartedAt   string `json:"started_at"`
-		Description string `json:"description"`
+		SessionName string `json:"session_name"`
 	}
 
 	err := app.readJSON(w, r, &requestPayload)
@@ -64,19 +71,14 @@ func (app *Config) CreateChatSession(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	startedAt, err := time.Parse(time.RFC3339, requestPayload.StartedAt)
-	if err != nil {
-		app.errorJSON(w, fmt.Errorf("invalid date format for started_at"), http.StatusBadRequest)
-		return
-	}
-
+	// Convert int to int64 for UserID
 	session := data.ChatSession{
-		UserID:      requestPayload.UserID,
-		StartedAt:   startedAt,
-		Description: requestPayload.Description,
+		UserID:      int64(requestPayload.UserID), // Corrected type
+		SessionName: requestPayload.SessionName,
 	}
 
-	sessionID, err := app.Models.ChatSession.InsertChatSession(session)
+	// Corrected method call: CreateSession
+	sessionID, err := app.Models.CreateSession(session)
 	if err != nil {
 		app.errorJSON(w, err, http.StatusInternalServerError)
 		return
@@ -93,7 +95,7 @@ func (app *Config) CreateChatSession(w http.ResponseWriter, r *http.Request) {
 	app.writeJSON(w, http.StatusCreated, payload)
 }
 
-// UpdateChatSession updates an existing chat session.
+// UpdateChatSession updates an existing chat session with new messages.
 func (app *Config) UpdateChatSession(w http.ResponseWriter, r *http.Request) {
 	idStr := r.URL.Query().Get("id")
 	sessionID, err := strconv.Atoi(idStr)
@@ -103,7 +105,7 @@ func (app *Config) UpdateChatSession(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var requestPayload struct {
-		Description string `json:"description"`
+		Messages []data.Message `json:"messages"`
 	}
 
 	err = app.readJSON(w, r, &requestPayload)
@@ -112,13 +114,8 @@ func (app *Config) UpdateChatSession(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	session := data.ChatSession{
-		ID:          sessionID,
-		Description: requestPayload.Description,
-		UpdatedAt:   time.Now(),
-	}
-
-	err = app.Models.ChatSession.UpdateChatSession(session)
+	// Corrected method call: UpdateSessionConversation
+	err = app.Models.UpdateSessionConversation(int64(sessionID), requestPayload.Messages)
 	if err != nil {
 		app.errorJSON(w, err, http.StatusInternalServerError)
 		return
@@ -141,7 +138,8 @@ func (app *Config) DeleteChatSession(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = app.Models.ChatSession.DeleteChatSession(sessionID)
+	// Corrected method call: DeleteSession
+	err = app.Models.DeleteSession(int64(sessionID))
 	if err != nil {
 		app.errorJSON(w, err, http.StatusInternalServerError)
 		return
