@@ -10,24 +10,94 @@ import 'package:government_assistant/pages/login_page/login_page.dart';
 import 'package:file_picker/file_picker.dart';
 import 'dart:typed_data';
 
-
 class ChatPage extends StatelessWidget {
   const ChatPage({super.key});
 
   @override
   Widget build(BuildContext context) {
+    // Sprawdzenie rozmiaru ekranu
+    bool isMobile = MediaQuery
+        .of(context)
+        .size
+        .width < 600;
+
     return Scaffold(
+      appBar: null, // Usunięcie paska u góry
       body: Stack(
         children: [
+          // Zmieniamy widoczność bocznego paska w zależności od rozmiaru ekranu
+          isMobile
+              ? _MobileLayout() // Na małych ekranach - ukryty sidebar
+              : _DesktopLayout(),
+          // Na większych ekranach - zawsze widoczny sidebar
+          const LoginSignupButton(),
+        ],
+      ),
+    );
+  }
+}
+
+class _MobileLayout extends StatefulWidget {
+  const _MobileLayout({super.key});
+
+  @override
+  State<_MobileLayout> createState() => _MobileLayoutState();
+}
+
+class _MobileLayoutState extends State<_MobileLayout> {
+  // Początkowy stan: Sidebar jest zamknięty
+  bool isSidebarOpen = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      // Otwieranie bocznego paska przez przycisk
+      drawer: const SideBar(), // Dodajemy boczny pasek jako drawer
+      body: Stack(
+        children: [
+          // Główna zawartość ekranu
           Row(
-            children: const [
-              SideBar(),
+            children: [
+              // Sidebar: widoczny tylko gdy isSidebarOpen jest true
+              if (isSidebarOpen) const SideBar(),
               Expanded(child: ChatBody()),
             ],
           ),
-          const LoginSignupButton(), // Przeniesiony przycisk
+          // Przywracamy poprzednią ikonę menu, która była na górze ekranu
+          Positioned(
+            left: 10,
+            top: 10, // Ustawiłem ikonę na samą górę ekranu
+            child: IconButton(
+              icon: Icon(
+                isSidebarOpen ? Icons.close : Icons.menu, // Ikona menu
+                color: Colors.white,
+                size: 30,
+              ),
+              onPressed: () {
+                setState(() {
+                  // Zmiana stanu: otwieranie lub zamykanie sidebaru
+                  isSidebarOpen = !isSidebarOpen;
+                });
+              },
+            ),
+          ),
         ],
       ),
+    );
+  }
+}
+
+class _DesktopLayout extends StatelessWidget {
+  const _DesktopLayout({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: const [
+        // Na większych ekranach Sidebar jest zawsze widoczny
+        SideBar(),
+        Expanded(child: ChatBody()),
+      ],
     );
   }
 }
@@ -95,13 +165,18 @@ class _ChatBodyState extends State<ChatBody> {
   Widget build(BuildContext context) {
     final apiProvider = Provider.of<ApiProvider>(context);
 
+    // Sprawdzamy, czy urządzenie jest mobilne
+    bool isMobile = MediaQuery
+        .of(context)
+        .size
+        .width < 600;
+
     return Column(
       children: [
         if (apiProvider.initialMessage.isNotEmpty)
           Padding(
             padding: const EdgeInsets.only(
               top: 100.0,
-              // Zwiększono odstęp, aby wiadomość pojawiła się poniżej przycisku
               left: 16.0,
               right: 16.0,
               bottom: 8.0,
@@ -166,8 +241,12 @@ class _ChatBodyState extends State<ChatBody> {
             ),
           ),
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 66.0),
-          // Zwiększenie odstępów od prawej i lewej strony
+          // Zmieniamy padding w zależności od urządzenia
+          padding: EdgeInsets.symmetric(
+            horizontal: isMobile
+                ? 8.0
+                : 66.0, // Mniejszy padding na urządzeniach mobilnych
+          ),
           child: InputWidget(
             controller: _controller,
             onSendMessage: _sendMessage,

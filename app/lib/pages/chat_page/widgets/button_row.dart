@@ -7,59 +7,60 @@ class ButtonRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Określenie, czy urządzenie jest mobilne
+    bool isMobile = MediaQuery
+        .of(context)
+        .size
+        .width < 600;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 10.0),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.start, // Wyrównanie przycisków do lewej
+        mainAxisAlignment: MainAxisAlignment.start,
+        // Wyrównanie przycisków do lewej
         children: [
-          ElevatedButton(
-            onPressed: () => onButtonPressed("Driving License"),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.grey[800],
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-              minimumSize: const Size(100, 40), // Wymiary przycisku
-            ),
-            child: const Text("Driving License", style: TextStyle(color: Colors.white)),
-          ),
+          _buildButton(context, "Driving License"),
           const SizedBox(width: 10),
-          ElevatedButton(
-            onPressed: () => onButtonPressed("ID"),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.grey[800],
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-              minimumSize: const Size(100, 40),
-            ),
-            child: const Text("ID", style: TextStyle(color: Colors.white)),
-          ),
+          _buildButton(context, "ID"),
           const SizedBox(width: 10),
-          ElevatedButton(
-            onPressed: () => onButtonPressed("Passport"),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.grey[800],
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-              minimumSize: const Size(100, 40),
-            ),
-            child: const Text("Passport", style: TextStyle(color: Colors.white)),
-          ),
+          _buildButton(context, "Passport"),
           const SizedBox(width: 10),
-          ElevatedButton(
-            onPressed: () => onButtonPressed("Social Benefits"),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.grey[800],
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-              minimumSize: const Size(100, 40),
-            ),
-            child: const Text("Social Benefits", style: TextStyle(color: Colors.white)),
-          ),
+          _buildButton(context, "Social Benefits"),
         ],
+      ),
+    );
+  }
+
+  // Funkcja pomocnicza do tworzenia przycisków
+  Widget _buildButton(BuildContext context, String label) {
+    bool isMobile = MediaQuery
+        .of(context)
+        .size
+        .width < 600;
+
+    return Expanded(
+      flex: isMobile ? 1 : 0,
+      // Na urządzeniach mobilnych przyciski zajmują równą szerokość
+      child: ElevatedButton(
+        onPressed: () => onButtonPressed(label),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.grey[800],
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+          minimumSize: Size(isMobile ? double.infinity : 150, 40),
+          // Równa szerokość na urządzeniach mobilnych
+          padding: EdgeInsets.zero, // Usunięcie domyślnego paddingu
+        ),
+        child: Container(
+          height: 40, // Ustalona wysokość dla przycisków
+          alignment: Alignment.center, // Wyśrodkowanie tekstu
+          child: Text(
+            label,
+            style: const TextStyle(color: Colors.white),
+            textAlign: TextAlign.center,
+          ),
+        ),
       ),
     );
   }
