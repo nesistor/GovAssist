@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:todo_flutter/constants.dart'; // Import stałych
 
 class SideBar extends StatelessWidget {
   const SideBar({super.key});
@@ -7,12 +8,12 @@ class SideBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: 200,
-      color: Colors.grey[800], // Zmieniono kolor górnej części na szary ciemny
+      color: kSideBarColor, // Zmieniono kolor na stałą
       child: Column(
         children: [
           Container(
             height: 100,
-            alignment: Alignment.centerLeft, // Wyrównanie do lewej
+            alignment: Alignment.centerLeft,
             padding: const EdgeInsets.only(left: 10.0),
             child: Row(
               children: [
@@ -53,11 +54,10 @@ class SideBar extends StatelessWidget {
         text,
         style: const TextStyle(
           color: Colors.white,
-          fontSize: 14, // Zmniejszono czcionkę
+          fontSize: 14,
         ),
       ),
       onTap: () {
-        // Dodaj logikę obsługi przycisków
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('$text clicked')),
         );
