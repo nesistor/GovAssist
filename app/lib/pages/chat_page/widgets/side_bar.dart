@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:todo_flutter/constants.dart'; // Import stałych
+import 'package:government_assistant/constants.dart'; 
 
 class SideBar extends StatelessWidget {
   const SideBar({super.key});
@@ -8,7 +8,7 @@ class SideBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: 200,
-      color: kSideBarColor, // Zmieniono kolor na stałą
+      color: kSideBarColor,
       child: Column(
         children: [
           Container(
@@ -18,7 +18,7 @@ class SideBar extends StatelessWidget {
             child: Row(
               children: [
                 Image.asset(
-                  'assets/logo/GovAssist.png', // Ikona po lewej stronie
+                  'assets/logo/GovAssist.png',
                   width: 40,
                   height: 40,
                 ),
@@ -27,7 +27,7 @@ class SideBar extends StatelessWidget {
                   'GovAssist',
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: 18, // Zmniejszono czcionkę
+                    fontSize: 18, 
                     fontWeight: FontWeight.bold,
                   ),
                 ),

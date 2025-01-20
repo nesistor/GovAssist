@@ -1,13 +1,13 @@
-![Government Assistant Logo](https://github.com/nesistor/GovGiggler/blob/main/GovAssist.png)
+![Government Assistant Logo](https://github.com/nesistor/GovGiggler/blob/main/GovAssists.png)
 
 # GovAssist: A Smart Government Assistant Powered by Grok AI
 
 **GovAssist** is an innovative platform designed to revolutionize how citizens and businesses interact with government services. By leveraging the advanced capabilities of **Grok AI**, this application streamlines bureaucracy, provides intelligent support, and helps users navigate the complexities of government processes with ease.
 
-### **Check it out:**  
+### **Check it out:**
 🔗 **[Project Demo](https://flutter-web-app-183025368636.us-central1.run.app/)** <br>  
-🔗 **[Project Demo on lablab.ai](https://lablab.ai/event/doge-ai-hackathon/hacktivate/govgiggler-a-smart-government-assistant)**  
- 
+🔗 **[Project Demo on lablab.ai](https://lablab.ai/event/doge-ai-hackathon/hacktivate/govgiggler-a-smart-government-assistant)**
+
 
 ---
 
@@ -17,7 +17,7 @@
 
 ## 🚀 Project Vision: Redefining Government Services
 
-**GovLinker** reshapes the interaction with government systems by being:
+**GovAssist** reshapes the interaction with government systems by being:
 
 - **Effortless**: Guides users through complex bureaucratic processes with ease.
 - **Accurate**: Ensures error-free submissions through advanced AI checks.
@@ -32,17 +32,17 @@ Whether it’s booking appointments, verifying identity, or solving problems dur
 ### 📝 **AI-Powered Document Assistance**
 - **Dynamic Document Download Links**: Access updated government forms directly from ministry websites.
 - **Problem Solving with Grok-Vision-Beta**:
-  - Helps identify missing fields or errors when filling out documents manually.
-  - Provides entertaining and humorous suggestions for solving common form-related issues.
-- **Appointment Scheduling**: **GovLinker** helps users book appointments with government offices and embassies for necessary document submissions.
+    - Helps identify missing fields or errors when filling out documents manually.
+    - Provides entertaining and humorous suggestions for solving common form-related issues.
+- **Appointment Scheduling**: **GovAssist** helps users book appointments with government offices and embassies for necessary document submissions.
 - **Bank-Level Authentication**: Verifies your identity using your banking app for added security when scheduling appointments or accessing government services.
 
 ---
 
 ### 🤖 **Interactive Chat Support**
 - **Problem Solving with a Twist**:
-  - Handles complex issues with a touch of humor, emojis, and witty comments.
-  - Example: *“Uh-oh, looks like we’re missing a Date of Birth! 🍼 Try adding it before the bureaucrats do!”*
+    - Handles complex issues with a touch of humor, emojis, and witty comments.
+    - Example: *“Uh-oh, looks like we’re missing a Date of Birth! 🍼 Try adding it before the bureaucrats do!”*
 - **Seamless Guidance**: Grok AI provides step-by-step instructions for filling out forms and completing tasks.
 
 ---
@@ -55,8 +55,8 @@ Whether it’s booking appointments, verifying identity, or solving problems dur
 
 ### 🌐 **Dynamic Data Retrieval**
 - **Real-Time Data Updates**:
-  - Scrapes government websites for the latest requirements and dynamically updates forms.
-  - Integrates this data into Grok’s **RAG (Retrieval-Augmented Generation)** framework for accurate and context-aware responses.
+    - Scrapes government websites for the latest requirements and dynamically updates forms.
+    - Integrates this data into Grok’s **RAG (Retrieval-Augmented Generation)** framework for accurate and context-aware responses.
 
 ---
 
@@ -70,9 +70,9 @@ Whether it’s booking appointments, verifying identity, or solving problems dur
 
 ### Multimodal Capabilities
 - **Grok-Vision-Beta**:
-  - Analyzes uploaded images of documents and identifies errors or missing fields to help users complete their forms manually.
+    - Analyzes uploaded images of documents and identifies errors or missing fields to help users complete their forms manually.
 - **Grok-Beta**:
-  - Context-aware chatbot provides personalized assistance with text-based interactions, offering problem-solving help and error detection.
+    - Context-aware chatbot provides personalized assistance with text-based interactions, offering problem-solving help and error detection.
 
 ### Retrieval-Augmented Generation (RAG)
 - Dynamically fetches live data from official government websites, ensuring accuracy and relevancy in real-time.
@@ -93,13 +93,6 @@ Whether it’s booking appointments, verifying identity, or solving problems dur
 - **Businesses**: Automates compliance and regulatory processes.
 - **Government Agencies**: Reduces administrative workload and improves service delivery.
 
----
-
-## 🤖 Fun and Efficiency Combined
-
-GovLinker isn’t just a tool—it’s a companion! It lightens the often frustrating bureaucratic experience with lighthearted humor and engaging interactions. Here’s what you’ll love:
-- **Joke Mode**: “Paperwork is hard, but jokes are easy. Let’s fix that missing signature and your day!”
-- **Emoji Responses**: Adds a bit of fun to every step. 📑✅
 
 ---
 
@@ -111,38 +104,3 @@ GovLinker isn’t just a tool—it’s a companion! It lightens the often frustr
 4. **Full Deployment**: Include advanced features like dynamic RAG updates and banking integration.
 5. **Ongoing Updates**: Continuously improve through user feedback and evolving AI models.
 
----
-
-## 🤝 **Contributing**
-
-We welcome contributions to **GovLinker**! Please follow these steps:
-
-1. **Fork** the repository by clicking the "Fork" button in the top-right corner of this page.
-
-2. **Clone** the forked repository to your local machine:
-   ```bash
-   git clone https://github.com/nesistor/GovLinker.git
-   ```
-
-3. **Create a new branch** for your feature:
-   ```bash
-   git checkout -b feature/your-feature
-   ```
-
-4. **Make your changes** and commit them:
-   ```bash
-   git add .
-   git commit -m "Add your feature description"
-   ```
-
-5. **Push the changes** to your forked repository:
-   ```bash
-   git push origin feature/your-feature
-   ```
-
-6. **Open a Pull Request (PR)** in the original repository.
----
-
-## 📄 **License**
-
----
