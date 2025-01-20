@@ -1,23 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:government_assistant/constants.dart';
 import 'package:government_assistant/responsive.dart';
 import 'package:government_assistant/components/background.dart';
-import 'package:government_assistant/pages/login_page/widgets/login_form.dart';
-import 'package:government_assistant/pages/login_page/widgets/login_page_top_image.dart';
-import 'package:government_assistant/pages/login_page/widgets/social_login.dart';
+import 'package:government_assistant/pages/signup_page/widgets/signup_top_image.dart';
+import 'package:government_assistant/pages/signup_page/widgets/signup_form.dart';
+import 'package:government_assistant/pages/signup_page/widgets/social_signup.dart';
 
-class LoginPage extends StatelessWidget {
-  const LoginPage({Key? key}) : super(key: key);
+class SignupPage extends StatelessWidget {
+  const SignupPage({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return const Background(
       child: SingleChildScrollView(
         child: Responsive(
-          mobile: MobileLoginPage(),
+          mobile: MobileSignupPage(),
           desktop: Row(
             children: [
               Expanded(
-                child: LoginPageTopImage(),
+                child: SignUpScreenTopImage(),
               ),
               Expanded(
                 child: Column(
@@ -25,13 +26,13 @@ class LoginPage extends StatelessWidget {
                   children: [
                     SizedBox(
                       width: 450,
-                      child: LoginForm(),
+                      child: SignUpForm(),
                     ),
-                    SizedBox(height: 16),
-                    SocialLogin(),
+                    SizedBox(height: defaultPadding / 2),
+                    SocalSignUp()
                   ],
                 ),
-              ),
+              )
             ],
           ),
         ),
@@ -40,27 +41,28 @@ class LoginPage extends StatelessWidget {
   }
 }
 
-class MobileLoginPage extends StatelessWidget {
-  const MobileLoginPage({Key? key}) : super(key: key);
+class MobileSignupPage extends StatelessWidget {
+  const MobileSignupPage({
+    Key? key,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return const Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: <Widget>[
-        LoginPageTopImage(),
+        SignUpScreenTopImage(),
         Row(
           children: [
             Spacer(),
             Expanded(
               flex: 8,
-              child: LoginForm(),
+              child: SignUpForm(),
             ),
             Spacer(),
           ],
         ),
-        SizedBox(height: 16),
-        SocialLogin(),
+        const SocalSignUp()
       ],
     );
   }

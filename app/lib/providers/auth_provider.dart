@@ -6,12 +6,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:todo_flutter/custom_widgets/toast_bar.dart';
-import 'package:todo_flutter/pages/login_pages/sms_code_page/sms_code_page.dart';
-
-import 'package:todo_flutter/model/user_model.dart';
-import 'package:todo_flutter/shared_preferences.dart';
-import 'package:todo_flutter/utils/utils.dart';
+import 'package:government_assistant/custom_widgets/toast_bar.dart';
+import 'package:government_assistant/model/user_model.dart';
+import 'package:government_assistant/shared_preferences.dart';
+import 'package:government_assistant/utils/utils.dart';
 
 class AuthProvider extends ChangeNotifier {
   bool _isSignedIn = false;
@@ -64,54 +62,19 @@ class AuthProvider extends ChangeNotifier {
     return null;
   }
 
-  // sign In
-  void signInWithPhone(BuildContext context, String phoneNumber) async {
-    try {
-      await _firebaseAuth.verifyPhoneNumber(
-          phoneNumber: phoneNumber,
-          verificationCompleted:
-              (PhoneAuthCredential phoneAuthCredential) async {
-            await _firebaseAuth.signInWithCredential(phoneAuthCredential);
-          },
-          verificationFailed: (error) {
-            throw Exception(error.message);
-          },
-          codeSent: (verificationId, forceResendingToken) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) =>
-                    SmsCodePage(verificationId: verificationId),
-              ),
-            );
-          },
-          codeAutoRetrievalTimeout: (verificationId) {});
-    } on FirebaseAuthException catch (e) {
-      toastBar(context, e.message.toString());
-    }
-  }
-
-  // verify OTP
-  void verifyOtp({
-    required BuildContext context,
-    required String verificationId,
-    required String userOtp,
-    required Function onSuccess,
-  }) async {
+  // Rejestracja z e-mailem i hasłem
+  Future<void> signUpWithEmailPassword(BuildContext context, String email,
+      String password) async {
     _isLoading = true;
     notifyListeners();
-
     try {
-      PhoneAuthCredential creds = PhoneAuthProvider.credential(
-          verificationId: verificationId, smsCode: userOtp);
-
-      User? user = (await _firebaseAuth.signInWithCredential(creds)).user!;
-
-      if (user != null) {
-        _uid = user.uid;
-        onSuccess();
-      }
-
+      UserCredential userCredential = await _firebaseAuth
+          .createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+      _uid = userCredential.user?.uid;
+      await saveUserDataToFirebase(context, email);
       _isLoading = false;
       notifyListeners();
     } on FirebaseAuthException catch (e) {
@@ -121,65 +84,120 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  // check if user exists
-  Future<bool> checkExistingUser() async {
-    DocumentSnapshot snapshot =
-    await _firebaseFirestore.collection("users").doc(_uid).get();
-    if (snapshot.exists) {
-      print("USER EXIST");
-      return true;
-    } else {
-      print("NEW USER");
-      return false;
-    }
-  }
-
-  void saveUserDataToFirebase({
-    required BuildContext context,
-    required UserModel userModel,
-    required File profilePic,
-    required Function onSucces,
-  }) async {
+  // Logowanie z e-mailem i hasłem
+  Future<void> signInWithEmailPassword(BuildContext context, String email,
+      String password) async {
     _isLoading = true;
     notifyListeners();
     try {
-      // uploading image to firebase storage.
-      await storeFileToStorage("profilePic/$_uid", profilePic).then((value) {
-        userModel.profilePic = value;
-        userModel.createdAt = DateTime
+      UserCredential userCredential = await _firebaseAuth
+          .signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+      _uid = userCredential.user?.uid;
+      await getDataFromFirestore();
+      setSignedInStatus();
+      _isLoading = false;
+      notifyListeners();
+    } on FirebaseAuthException catch (e) {
+      toastBar(context, e.message.toString());
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  // Logowanie przez Google
+  Future<void> signInWithGoogle(BuildContext context) async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      final GoogleSignIn googleSignIn = GoogleSignIn();
+      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
+      final GoogleSignInAuthentication googleAuth = await googleUser!
+          .authentication;
+
+      final AuthCredential credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      UserCredential userCredential = await _firebaseAuth.signInWithCredential(
+          credential);
+      _uid = userCredential.user?.uid;
+      await getDataFromFirestore();
+      setSignedInStatus();
+
+      _isLoading = false;
+      notifyListeners();
+    } catch (e) {
+      toastBar(context, e.toString());
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  // Logowanie przez Facebook
+  Future<void> signInWithFacebook(BuildContext context) async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      final LoginResult loginResult = await FacebookAuth.instance.login();
+      final AccessToken accessToken = loginResult.accessToken!;
+
+      final AuthCredential credential = FacebookAuthProvider.credential(
+          accessToken.token);
+      UserCredential userCredential = await _firebaseAuth.signInWithCredential(
+          credential);
+
+      _uid = userCredential.user?.uid;
+      await getDataFromFirestore();
+      setSignedInStatus();
+
+      _isLoading = false;
+      notifyListeners();
+    } catch (e) {
+      toastBar(context, e.toString());
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  // Zapisanie danych użytkownika do Firestore
+  void saveUserDataToFirebase(BuildContext context, String email) async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      UserModel userModel = UserModel(
+        uid: _uid!,
+        email: email,
+        createdAt: DateTime
             .now()
             .millisecondsSinceEpoch
-            .toString();
-        userModel.phoneNumber = _firebaseAuth.currentUser!.phoneNumber!;
-        userModel.uid = _firebaseAuth.currentUser!.uid;
-      });
+            .toString(),
+        profilePic: '',
+        // Możesz ustawić domyślną ikonę, jeśli nie ma zdjęcia
+        phoneNumber: '', // Pusty, bo nie używamy telefonu
+      );
       _userModel = userModel;
 
-      // uploading to databse
       await _firebaseFirestore
           .collection("users")
           .doc(_uid)
           .set(userModel.toMap())
           .then((value) {
-        onSucces();
         _isLoading = false;
         notifyListeners();
       });
     } on FirebaseAuthException catch (e) {
-      showSnackBar(context, e.message.toString());
-      _isLoading == false;
+      toastBar(context, e.message.toString());
+      _isLoading = false;
       notifyListeners();
     }
   }
 
-  Future<String> storeFileToStorage(String ref, File file) async {
-    UploadTask uploadTask = _firebaseStorage.ref().child(ref).putFile(file);
-    TaskSnapshot snapshot = await uploadTask;
-    String downloadUrl = await snapshot.ref.getDownloadURL();
-    return downloadUrl;
-  }
-
-  Future getDataFromFirestore() async {
+  // Pobranie danych użytkownika z Firestore
+  Future<void> getDataFromFirestore() async {
     await _firebaseFirestore
         .collection("users")
         .doc(_firebaseAuth.currentUser!.uid)
@@ -198,21 +216,8 @@ class AuthProvider extends ChangeNotifier {
     });
   }
 
-  // STORING DATA LOCALLY
-  Future saveUserDataToSP() async {
-    SharedPreferences s = await SharedPreferences.getInstance();
-    await s.setString("user_model", jsonEncode(userModel.toMap()));
-  }
-
-  Future getDataFromSP() async {
-    SharedPreferences s = await SharedPreferences.getInstance();
-    String data = s.getString("user_model") ?? '';
-    _userModel = UserModel.fromMap(jsonDecode(data));
-    _uid = _userModel!.uid;
-    notifyListeners();
-  }
-
-  Future userSignOut() async {
+  // Wylogowanie użytkownika
+  Future<void> userSignOut() async {
     SharedPreferences s = await SharedPreferences.getInstance();
     await _firebaseAuth.signOut();
     _isSignedIn = false;

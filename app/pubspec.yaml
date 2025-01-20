@@ -37,6 +37,7 @@ dependencies:
   html2md: ^1.0.0
   file_picker: ^8.1.5
   http_parser: ^4.1.1
+  flutter_svg: ^2.0.0
 
 
 dev_dependencies:
@@ -62,6 +63,8 @@ flutter:
   uses-material-design: true
   assets:
     - assets/logo/
+    - assets/images/
+    - assets/icons/
 
   # To add assets to your application, add an assets section, like this:
   # assets:
