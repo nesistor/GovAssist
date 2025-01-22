@@ -1,18 +1,21 @@
-GovAssist Commercial License Agreement
+MIT License
 
-This repository is currently licensed under a Commercial License. The software is available for sale or transfer to a new owner. The terms and pricing are negotiable. If you are interested in acquiring the rights to this software, please reach out to the project owner for further details and discussions regarding the terms of the sale.
+Copyright (c) 2025 Karol Malicki karolmalicki.001@gmail.com
 
-The current owner is seeking a fair and mutually beneficial agreement and is open to offers. The final price and terms will be determined based on the buyer's needs, the scope of use, and other relevant factors.
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
 
-License Terms:
-- You may use the software for commercial purposes once a sale or transfer agreement is reached.
-- Any modifications to the software must be discussed and agreed upon as part of the negotiation.
-- Redistribution of the software is not permitted until an official transfer of rights has occurred.
-- The new owner will obtain full intellectual property rights to the software upon completion of the transfer.
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
 
-For inquiries, please contact: karolmalicki.001@gmail.com
-
-Please note: This software is not available under open-source licenses and is not intended for free distribution or use.
-
-The terms of this Commercial License are subject to change, and negotiations are required for the final agreement.
-
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
