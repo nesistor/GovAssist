@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "935916330992",
+    "project_id": "govassist-84f30",
+    "storage_bucket": "govassist-84f30.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:935916330992:android:927f684344f26d06678735",
+        "android_client_info": {
+          "package_name": "com.example.government_assisntant"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "935916330992-gk2ts2q7jhvmpousnrhkg5rm8gecf9gh.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDf0z5y-fPfExwidn2sIyX_LMP_O759rkg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "935916330992-gk2ts2q7jhvmpousnrhkg5rm8gecf9gh.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "935916330992-8lglv8pmgtv0mffhgtrrjpf8v3ugmobv.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.governmentAssisntant"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

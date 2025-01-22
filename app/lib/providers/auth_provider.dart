@@ -6,10 +6,15 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:government_assistant/custom_widgets/toast_bar.dart';
-import 'package:government_assistant/model/user_model.dart';
+import 'package:government_assistant/components/toast_bar.dart';
+import 'package:government_assistant/models/user_model.dart';
 import 'package:government_assistant/shared_preferences.dart';
 import 'package:government_assistant/utils/utils.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
+
+import 'package:government_assistant/pages//chat_page/chat_page.dart';
+
 
 class AuthProvider extends ChangeNotifier {
   bool _isSignedIn = false;
@@ -62,52 +67,54 @@ class AuthProvider extends ChangeNotifier {
     return null;
   }
 
-  // Rejestracja z e-mailem i hasłem
   Future<void> signUpWithEmailPassword(BuildContext context, String email,
       String password) async {
     _isLoading = true;
     notifyListeners();
     try {
+      // Check if email is already in use
+      if (await isEmailRegistered(email)) {
+        throw FirebaseAuthException(
+            code: 'email-already-in-use', message: 'Email is already in use');
+      }
+
       UserCredential userCredential = await _firebaseAuth
-          .createUserWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
+          .createUserWithEmailAndPassword(email: email, password: password);
       _uid = userCredential.user?.uid;
       await saveUserDataToFirebase(context, email);
-      _isLoading = false;
-      notifyListeners();
+      setSignedInStatus();
     } on FirebaseAuthException catch (e) {
       toastBar(context, e.message.toString());
+    } finally {
       _isLoading = false;
       notifyListeners();
     }
   }
 
-  // Logowanie z e-mailem i hasłem
   Future<void> signInWithEmailPassword(BuildContext context, String email,
       String password) async {
     _isLoading = true;
     notifyListeners();
     try {
       UserCredential userCredential = await _firebaseAuth
-          .signInWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
+          .signInWithEmailAndPassword(email: email, password: password);
       _uid = userCredential.user?.uid;
       await getDataFromFirestore();
       setSignedInStatus();
-      _isLoading = false;
-      notifyListeners();
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => ChatPage()),
+      );
     } on FirebaseAuthException catch (e) {
       toastBar(context, e.message.toString());
+    } finally {
       _isLoading = false;
       notifyListeners();
     }
   }
 
-  // Logowanie przez Google
+
   Future<void> signInWithGoogle(BuildContext context) async {
     _isLoading = true;
     notifyListeners();
@@ -137,34 +144,35 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  // Logowanie przez Facebook
-  Future<void> signInWithFacebook(BuildContext context) async {
-    _isLoading = true;
-    notifyListeners();
-    try {
-      final LoginResult loginResult = await FacebookAuth.instance.login();
-      final AccessToken accessToken = loginResult.accessToken!;
+  //Future<void> signInWithFacebook(BuildContext context) async {
+  //  _isLoading = true;
+  //  notifyListeners();
+  //  try {
+  //    final LoginResult loginResult = await FacebookAuth.instance.login();
+  //    final AccessToken accessToken = loginResult.accessToken!;
 
-      final AuthCredential credential = FacebookAuthProvider.credential(
-          accessToken.token);
-      UserCredential userCredential = await _firebaseAuth.signInWithCredential(
-          credential);
+  // Use `accessToken.token` instead of `accessToken.value`
+  //    final AuthCredential credential = FacebookAuthProvider.credential(
+  //        accessToken.token);
 
-      _uid = userCredential.user?.uid;
-      await getDataFromFirestore();
-      setSignedInStatus();
+  //    UserCredential userCredential = await _firebaseAuth.signInWithCredential(
+  //        credential);
+  //    _uid = userCredential.user?.uid;
+  //    await getDataFromFirestore();
+  //    setSignedInStatus();
 
-      _isLoading = false;
-      notifyListeners();
-    } catch (e) {
-      toastBar(context, e.toString());
-      _isLoading = false;
-      notifyListeners();
-    }
-  }
+  //    _isLoading = false;
+  //    notifyListeners();
+  //  } catch (e) {
+  //    toastBar(context, e.toString());
+  //    _isLoading = false;
+  //    notifyListeners();
+  //  }
+  //}
 
-  // Zapisanie danych użytkownika do Firestore
-  void saveUserDataToFirebase(BuildContext context, String email) async {
+
+  Future<void> saveUserDataToFirebase(BuildContext context,
+      String email) async {
     _isLoading = true;
     notifyListeners();
     try {
@@ -176,8 +184,9 @@ class AuthProvider extends ChangeNotifier {
             .millisecondsSinceEpoch
             .toString(),
         profilePic: '',
-        // Możesz ustawić domyślną ikonę, jeśli nie ma zdjęcia
-        phoneNumber: '', // Pusty, bo nie używamy telefonu
+        phoneNumber: '',
+        bio: '',
+        name: '',
       );
       _userModel = userModel;
 
@@ -196,7 +205,6 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  // Pobranie danych użytkownika z Firestore
   Future<void> getDataFromFirestore() async {
     await _firebaseFirestore
         .collection("users")
@@ -216,7 +224,6 @@ class AuthProvider extends ChangeNotifier {
     });
   }
 
-  // Wylogowanie użytkownika
   Future<void> userSignOut() async {
     SharedPreferences s = await SharedPreferences.getInstance();
     await _firebaseAuth.signOut();
@@ -225,3 +232,10 @@ class AuthProvider extends ChangeNotifier {
     s.clear();
   }
 }
+
+Future<bool> isEmailRegistered(String email) async {
+  final List<String> signInMethods =
+  await FirebaseAuth.instance.fetchSignInMethodsForEmail(email);
+  return signInMethods.isNotEmpty;
+}
+
