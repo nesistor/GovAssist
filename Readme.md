@@ -1,12 +1,18 @@
-![Government Assistant Logo](https://github.com/nesistor/GovGiggler/blob/main/GovAssists.png)
+![Government Assistant Logo](https://github.com/nesistor/GovAssist/blob/main/GovAssists.png)
 
 # GovAssist: A Smart Government Assistant Powered by Grok AI
 
-**GovAssist** is an innovative platform designed to revolutionize how citizens and businesses interact with government services. By leveraging the advanced capabilities of **Grok AI**, this application streamlines bureaucracy, provides intelligent support, and helps users navigate the complexities of government processes with ease.
+**GovAssist** is an innovative platform designed to revolutionize how citizens and businesses
+interact with government services. By leveraging the advanced capabilities of **Grok AI**, this
+application streamlines bureaucracy, provides intelligent support, and helps users navigate the
+complexities of government processes with ease.
 
 ### **Check it out:**
+
 🔗 **[Project Demo](https://flutter-web-app-183025368636.us-central1.run.app/)** <br>  
-🔗 **[Project Demo on lablab.ai](https://lablab.ai/event/doge-ai-hackathon/hacktivate/govgiggler-a-smart-government-assistant)**
+🔗 *
+*[Project Demo on lablab.ai](https://lablab.ai/event/doge-ai-hackathon/hacktivate/govgiggler-a-smart-government-assistant)
+**
 
 
 ---
@@ -23,59 +29,79 @@
 - **Accurate**: Ensures error-free submissions through advanced AI checks.
 - **Engaging**: Offers entertaining problem-solving with jokes, emojis, and a friendly interface.
 
-Whether it’s booking appointments, verifying identity, or solving problems during document submission, **GovAssist** is your ultimate government assistant.
+Whether it’s booking appointments, verifying identity, or solving problems during document
+submission, **GovAssist** is your ultimate government assistant.
 
 ---
 
 ## 🌟 Key Features
 
 ### 📝 **AI-Powered Document Assistance**
-- **Dynamic Document Download Links**: Access updated government forms directly from ministry websites.
+
+- **Dynamic Document Download Links**: Access updated government forms directly from ministry
+  websites.
 - **Problem Solving with Grok-Vision-Beta**:
     - Helps identify missing fields or errors when filling out documents manually.
     - Provides entertaining and humorous suggestions for solving common form-related issues.
-- **Appointment Scheduling**: **GovAssist** helps users book appointments with government offices and embassies for necessary document submissions.
-- **Bank-Level Authentication**: Verifies your identity using your banking app for added security when scheduling appointments or accessing government services.
+- **Appointment Scheduling**: **GovAssist** helps users book appointments with government offices
+  and embassies for necessary document submissions.
+- **Bank-Level Authentication**: Verifies your identity using your banking app for added security
+  when scheduling appointments or accessing government services.
 
 ---
 
 ### 🤖 **Interactive Chat Support**
+
 - **Problem Solving with a Twist**:
     - Handles complex issues with a touch of humor, emojis, and witty comments.
-    - Example: *“Uh-oh, looks like we’re missing a Date of Birth! 🍼 Try adding it before the bureaucrats do!”*
-- **Seamless Guidance**: Grok AI provides step-by-step instructions for filling out forms and completing tasks.
+    - Example: *“Uh-oh, looks like we’re missing a Date of Birth! 🍼 Try adding it before the
+      bureaucrats do!”*
+- **Seamless Guidance**: Grok AI provides step-by-step instructions for filling out forms and
+  completing tasks.
 
 ---
 
 ### 📅 **Appointment Scheduling**
-- **Smart Booking System**: Schedule appointments with government offices and embassies based on your location and document needs.
-- **Real-Time Notifications**: Stay informed about appointment changes or updates, ensuring you never miss a critical step.
+
+- **Smart Booking System**: Schedule appointments with government offices and embassies based on
+  your location and document needs.
+- **Real-Time Notifications**: Stay informed about appointment changes or updates, ensuring you
+  never miss a critical step.
 
 ---
 
 ### 🌐 **Dynamic Data Retrieval**
+
 - **Real-Time Data Updates**:
     - Scrapes government websites for the latest requirements and dynamically updates forms.
-    - Integrates this data into Grok’s **RAG (Retrieval-Augmented Generation)** framework for accurate and context-aware responses.
+    - Integrates this data into Grok’s **RAG (Retrieval-Augmented Generation)** framework for
+      accurate and context-aware responses.
 
 ---
 
 ### 🔒 **Secure and Reliable**
+
 - **Bank-Level Authentication**: Confirm your identity via your banking app for added security.
-- **Direct Submissions**: Send validated documents and forms directly to the relevant department with a single click after identity verification.
+- **Direct Submissions**: Send validated documents and forms directly to the relevant department
+  with a single click after identity verification.
 
 ---
 
 ## 🧠 Powered by Grok AI
 
 ### Multimodal Capabilities
+
 - **Grok-Vision-Beta**:
-    - Analyzes uploaded images of documents and identifies errors or missing fields to help users complete their forms manually.
+    - Analyzes uploaded images of documents and identifies errors or missing fields to help users
+      complete their forms manually.
 - **Grok-Beta**:
-    - Context-aware chatbot provides personalized assistance with text-based interactions, offering problem-solving help and error detection.
+    - Context-aware chatbot provides personalized assistance with text-based interactions, offering
+      problem-solving help and error detection.
 
 ### Retrieval-Augmented Generation (RAG)
-- Dynamically fetches live data from official government websites, ensuring accuracy and relevancy in real-time.
+
+- Dynamically fetches live data from official government websites, ensuring accuracy and relevancy
+  in real-time.
 
 ---
 
@@ -92,7 +118,6 @@ Whether it’s booking appointments, verifying identity, or solving problems dur
 - **Citizens**: Simplifies appointment bookings, document submissions, and more.
 - **Businesses**: Automates compliance and regulatory processes.
 - **Government Agencies**: Reduces administrative workload and improves service delivery.
-
 
 ---
 
