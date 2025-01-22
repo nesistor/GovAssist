@@ -39,6 +39,8 @@ app/.flutter-versions
 app/.gradle/
 app/.vscode/
 lib/firebase_options.dart
+app/lib/firebase_options.dart
+
 
 # PAPa
 app/firebase.json
