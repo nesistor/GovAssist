@@ -132,7 +132,7 @@ def process_document_with_text_model(aggregated_results: list) -> dict:
                 {"role": "user", "content": document_context},
             ],
         )
-        return response.choices[0].message
+        return response.choices[0].messagev
     except Exception as e:
         logger.error("Error processing document: %s", str(e))
         raise HTTPException(status_code=500, detail=f"Error processing document: {str(e)}")
@@ -155,6 +155,8 @@ def generate_response(request: dict) -> str:
 
     # Add the new question to the conversation history
     user_conversations[user_id].append({"role": "user", "content": question})
+    if len(user_conversations[user_id]) > MAX_HISTORY_LENGTH:
+        user_conversations[user_id] = user_conversations[user_id][-MAX_HISTORY_LENGTH:]
 
     # Build the base messages with the current context
     base_messages = [
@@ -174,6 +176,7 @@ def generate_response(request: dict) -> str:
         response = client.chat.completions.create(
             model="grok-2-latest",
             messages=base_messages,
+            max_tokens=500, 
             tools=tools_definition,
             tool_choice="auto"
         )

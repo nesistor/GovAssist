@@ -19,12 +19,12 @@ __pycache__
 .idea/*
 
 # Flutter/Dart specific files inside the app directory
-app/.build/
-app/.android/
-app/.ios/
-app/.windows/
-app/.linux/
-app/.macos/
+app/build/
+app/android/
+app/ios/
+app/windows/
+app/linux/
+app/macos/
 app/test/
 app/.idea/
 app/*.iml
@@ -38,6 +38,11 @@ app/.flutter-plugins-dependencies
 app/.flutter-versions
 app/.gradle/
 app/.vscode/
+lib/firebase_options.dart
+
+# PAPa
+app/firebase.json
+app/firepit-log.txt
 
 # Allow only the lib folder inside the app directory
 !app/lib/
