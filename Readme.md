@@ -1,4 +1,4 @@
-![Government Assistant Logo](https://github.com/nesistor/GovAssist/blob/main/GovAssists.png)
+![Government Assistant Logo](https://github.com/nesistor/GovAssist/blob/main/GovAssist.png)
 
 # GovAssist: A Smart Government Assistant Powered by Grok AI
 
