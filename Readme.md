@@ -9,6 +9,8 @@ complexities of government processes with ease.
 
 ### **Check it out:**
 
+🔗 **[Twitter/X](https://x.com/gov_assist)** <br>  
+🔗 **[Website](https://govassist.online)**
 🔗 **[Project Demo](https://flutter-web-app-183025368636.us-central1.run.app/)** <br>  
 🔗 *
 *[Project Demo on lablab.ai](https://lablab.ai/event/doge-ai-hackathon/hacktivate/govgiggler-a-smart-government-assistant)
@@ -16,6 +18,7 @@ complexities of government processes with ease.
 
 
 ---
+
 
 ![DEMO](https://github.com/nesistor/GovGiggler/blob/main/xai9.png)
 ![DEMO](https://github.com/nesistor/GovGiggler/blob/main/xai7.png)
