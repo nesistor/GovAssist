@@ -43,8 +43,8 @@ app/lib/firebase_options.dart
 
 
 # PAPa
-app/firebase.json
-app/firepit-log.txt
+#app/firebase.json
+#app/firepit-log.txt
 
 # Allow only the lib folder inside the app directory
 !app/lib/

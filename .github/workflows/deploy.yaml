@@ -25,10 +25,25 @@ jobs:
           flutter-version: '3.27.0'
 
       - name: Build Flutter Web App
+        env:
+          FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY }}
+          FIREBASE_APP_ID: ${{ secrets.FIREBASE_APP_ID }}
+          FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.FIREBASE_MESSAGING_SENDER_ID }}
+          FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+          FIREBASE_AUTH_DOMAIN: ${{ secrets.FIREBASE_AUTH_DOMAIN }}
+          FIREBASE_STORAGE_BUCKET: ${{ secrets.FIREBASE_STORAGE_BUCKET }}
+          FIREBASE_MEASUREMENT_ID: ${{ secrets.FIREBASE_MEASUREMENT_ID }}
         run: |
           cd app
           flutter pub get
-          flutter build web --release
+          flutter build web --release \
+            --dart-define=FIREBASE_API_KEY=$FIREBASE_API_KEY \
+            --dart-define=FIREBASE_APP_ID=$FIREBASE_APP_ID \
+            --dart-define=FIREBASE_MESSAGING_SENDER_ID=$FIREBASE_MESSAGING_SENDER_ID \
+            --dart-define=FIREBASE_PROJECT_ID=$FIREBASE_PROJECT_ID \
+            --dart-define=FIREBASE_STORAGE_BUCKET=$FIREBASE_STORAGE_BUCKET \
+            --dart-define=FIREBASE_AUTH_DOMAIN=$FIREBASE_AUTH_DOMAIN \
+            --dart-define=FIREBASE_MEASUREMENT_ID=$FIREBASE_MEASUREMENT_ID
 
           # Verify build success
           if [ ! -d "build/web" ]; then
@@ -49,55 +64,49 @@ jobs:
     permissions:
       contents: read
       id-token: write
-  
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
-  
+
       - name: Download Flutter Web Build Artifact
         uses: actions/download-artifact@v3
         with:
           name: flutter-web-build
           path: flutter-web-build
-  
-      - name: Verify Downloaded Artifact
-        run: |
-          echo "Verifying downloaded artifact..."
-          ls -la  # This will show the current directory's contents
-          ls -la flutter-web-build || echo "flutter-web-build directory doesn't exist"  # Added check for existence of the directory
-  
+
       - name: Prepare Build Context
         run: |
           mkdir -p build/web
           cp -r flutter-web-build/* build/web  # Copy files from the downloaded artifact to the build/web folder
           echo "Build context prepared:"
           ls -la build/web  # Verify the files are in the build/web directory
-  
+
       - name: Authenticate to GCP
         uses: google-github-actions/auth@v1
         with:
           credentials_json: ${{ secrets.GCP_CREDENTIALS }}
-  
+
       - name: Configure Docker Authentication
         run: |
           gcloud auth configure-docker us-central1-docker.pkg.dev
-  
+
       - name: Build Docker Image for API
         run: |
           docker build \
             -t us-central1-docker.pkg.dev/government-assistant-001/government-assistant-docker-repo/government-assistant-api \
             -f Dockerfile .
-  
+
       - name: Build Docker Image for Flutter Web App
         run: |
           docker build \
             -t us-central1-docker.pkg.dev/government-assistant-001/government-assistant-docker-repo/flutter-web-app \
             -f Dockerfile.web .
-  
+
       - name: Verify Files in Docker Image
         run: |
           docker run us-central1-docker.pkg.dev/government-assistant-001/government-assistant-docker-repo/flutter-web-app ls -l /usr/share/nginx/html
-        
+
       - name: Push Docker Images
         run: |
           docker push us-central1-docker.pkg.dev/government-assistant-001/government-assistant-docker-repo/government-assistant-api
