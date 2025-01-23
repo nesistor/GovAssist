@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'firebase_options_all.dart';
+import 'firebase_options.dart';
 import 'providers/api_provider.dart';
 import 'providers/auth_provider.dart';
 import 'package:government_assistant/pages//chat_page/chat_page.dart';
