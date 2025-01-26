@@ -9,3 +9,7 @@ python-multipart
 PyPDF2
 requests
 chromadb
+sqlalchemy
+psycopg2-binary
+asyncpg
+firebase_admin

@@ -1,6 +1,8 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from api.routes import router
+from api.db.session import init_db
+from api.middleware.firebase_middleware import FirebaseAuthMiddleware
 
 app = FastAPI(
     title="DMV Document Validator and Assistant",
@@ -11,14 +13,17 @@ app = FastAPI(
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"
-        #"https://flutter-web-app-183025368636.us-central1.run.app", 
-        #"https://government-assistant-api-183025368636.us-central1.run.app"
-    ],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.on_event("startup")
+async def startup_event():
+    await init_db()
+
+app.add_middleware(FirebaseAuthMiddleware)
 
 app.include_router(router)
 

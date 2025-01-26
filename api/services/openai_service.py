@@ -140,38 +140,44 @@ def process_document_with_text_model(aggregated_results: list) -> dict:
 # A dictionary to store the conversation context per user (in a real scenario, this could be a database)
 user_conversations = {}
 
-def generate_response(request: dict) -> str:
-    user_id = request.get('user_id')
-    question = request.get('question')
+async def generate_response(request: dict) -> str:
+    # Extract user ID, session ID, and question from the request
+    user_id = request.get("user_id")
+    session_id = request.get("session_id")
+    question = request.get("question")
 
-    if not user_id:
-        raise HTTPException(status_code=400, detail="User ID is required")
+    # Ensure both user ID and session ID are provided
+    if not user_id or not session_id:
+        raise HTTPException(status_code=400, detail="User ID and Session ID are required")
 
-    logger.info(f"Received question: {question} from user ID: {user_id}")
+    logger.info(f"Received question: {question} from session ID: {session_id}")
 
-    # Initialize user context if it doesn't exist
-    if user_id not in user_conversations:
-        user_conversations[user_id] = []
+    # Using async with for managing session within an async function
+    async with SessionLocal() as session:
+        # Retrieve conversation history from the database
+        session_conversations = await get_conversation_history(session, user_id, session_id)
 
-    # Add the new question to the conversation history
-    user_conversations[user_id].append({"role": "user", "content": question})
-    if len(user_conversations[user_id]) > MAX_HISTORY_LENGTH:
-        user_conversations[user_id] = user_conversations[user_id][-MAX_HISTORY_LENGTH:]
+        # Add user's question to the conversation history in the database
+        await add_message(session, user_id, session_id, "user", question)
 
-    # Build the base messages with the current context
-    base_messages = [
-        {
-            "role": "system",
-            "content": "You are a friendly and helpful assistant with expertise in various government services. "
-                       "I can help with DMV, Health, Education, and Tax-related queries. "
-                       "My goal is to simplify processes and make things clear with a little bit of humor along the way."
-        }
-    ]
+        # Build base system messages for context
+        base_messages = [
+            {
+                "role": "system",
+                "content": (
+                    "You are a friendly and helpful assistant with expertise in various government services. "
+                    "I can help with DMV, Health, Education, and Tax-related queries. "
+                    "My goal is to simplify processes and make things clear with a little bit of humor along the way."
+                )
+            }
+        ]
 
-    # Append all prior conversation messages for the user
-    base_messages.extend(user_conversations[user_id])
+        # Append prior conversation and the current user question
+        base_messages.extend(session_conversations)
+        base_messages.append({"role": "user", "content": question})
 
     try:
+        # Request response from the OpenAI model
         logger.info("Requesting response from OpenAI model")
         response = client.chat.completions.create(
             model="grok-2-latest",
@@ -182,41 +188,41 @@ def generate_response(request: dict) -> str:
         )
         logger.info("Response received from OpenAI model")
 
-        # Retrieve model's response
+        # Retrieve the model's response
         model_response = response.choices[0].message
 
-        # Process tool calls if present
+        # Process any tool calls from the model response
         tool_calls = response.choices[0].message.tool_calls
         if tool_calls:
             logger.info(f"Processing {len(tool_calls)} tool calls")
+
             for tool_call in tool_calls:
                 tool_name = tool_call.function.name
                 tool_args = json.loads(tool_call.function.arguments)
                 logger.debug(f"Tool call: {tool_name}, Args: {tool_args}")
 
-                # Add ministry context to tool arguments if available
+                # Add ministry context if available
                 if ministry and tool_name == "retrieve_and_answer":
                     tool_args["ministry"] = ministry
 
                 # Execute the tool call
                 if tool_name == "retrieve_and_answer":
-                    # Pass the user's question and ministry to the tool
                     tool_args["query"] = question
                     tool_args["ministry"] = ministry
                 result = execute_tool(tool_name, tool_args)
 
-                # Handle RAG tool result
+                # Handle the result of the tool call
                 if tool_name == "retrieve_and_answer":
                     if "answer" in result:
                         final_response = result["answer"]
                     else:
                         final_response = "I couldn't find an answer using the available tools."
-                    break  # Exit loop after RAG tool as it provides the final answer
+                    break  # Exit the loop after the RAG tool
 
-                # Process other tool results (e.g., get_service_links_us)
+                # Process other types of tool results (e.g., links)
                 elif "link" in result:
                     final_response = f"Here is the link for driving license in Texas: {result['link']}"
-                    break  # Exit the loop as we have a valid response
+                    break  # Exit the loop once a valid response is found
 
             else:
                 # If no valid tool response, use the model's original response
@@ -225,12 +231,14 @@ def generate_response(request: dict) -> str:
             # If no tool calls, use the model's response
             final_response = model_response.content
 
-        # Add the final response to the conversation history
-        user_conversations[user_id].append({"role": "assistant", "content": final_response})
+        # Save the final response to the conversation history in the database
+        async with SessionLocal() as session:
+            await add_message(session, user_id, session_id, "assistant", final_response)
 
         logger.info("Final response processed successfully")
         return final_response
 
     except Exception as e:
+        # Log and raise an error if something goes wrong
         logger.error(f"Error generating response: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error processing the request: {str(e)}")

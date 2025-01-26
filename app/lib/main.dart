@@ -26,7 +26,7 @@ class MyApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => ApiProvider()),
         ChangeNotifierProvider(create: (_) => AuthProvider()),
-        // AuthProvider here
+
       ],
       child: MaterialApp(
         title: 'GovAssist',
