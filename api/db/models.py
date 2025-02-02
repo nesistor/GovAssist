@@ -4,7 +4,7 @@ from datetime import datetime
 
 Base = declarative_base()
 
-class Conversation(Base):
+class ConversationMessage(Base):
     __tablename__ = "conversations"
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(String, index=True)

@@ -1,33 +1,46 @@
-from fastapi import HTTPException, Request
-from firebase_admin import auth
-from fastapi.responses import JSONResponse
-from starlette.middleware.base import BaseHTTPMiddleware
-import firebase_admin
-from firebase_admin import credentials
+import logging
 import os
+import uuid
+from firebase_admin import auth, credentials, initialize_app
+from fastapi import HTTPException, Request
+from starlette.middleware.base import BaseHTTPMiddleware
 
-# Initialize Firebase Admin SDK
-firebase_cred = credentials.Certificate(os.getenv("FIREBASE_CREDENTIALS_PATH"))
-firebase_admin.initialize_app(firebase_cred)
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+FIREBASE_CREDENTIALS_PATH = os.getenv("FIREBASE_CREDENTIALS_PATH")
+if not FIREBASE_CREDENTIALS_PATH:
+    logger.critical("Zmienna środowiskowa FIREBASE_CREDENTIALS_PATH nie jest ustawiona!")
+    raise RuntimeError("Brak ścieżki do kredensjałów Firebase!")
+
+logger.info(f"Używamy kredensjałów Firebase z: {FIREBASE_CREDENTIALS_PATH}")
+
+try:
+    cred = credentials.Certificate(FIREBASE_CREDENTIALS_PATH)
+    initialize_app(cred)
+    logger.info("Firebase Admin SDK został pomyślnie zainicjowany")
+except Exception as e:
+    logger.critical(f"Błąd inicjalizacji Firebase: {e}", exc_info=True)
+    raise RuntimeError("Błąd podczas inicjalizacji Firebase")
 
 class FirebaseAuthMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
-        # Extract token from Authorization header
-        token = request.headers.get("Authorization")
+        logger.debug("Przetwarzanie zapytania w middleware")
+        
+        auth_header = request.headers.get('Authorization')
+        if auth_header:
+            token = auth_header.split("Bearer ")[-1]
+            try:
+                decoded_token = auth.verify_id_token(token)
+                request.state.user = decoded_token
+                request.state.session_id = decoded_token["uid"]
+                logger.info(f"Użytkownik {decoded_token['uid']} pomyślnie zautoryzowany")
+            except Exception as e:
+                logger.error(f"Błąd weryfikacji tokenu: {e}")
+                raise HTTPException(status_code=401, detail="Błędny token lub token wygasł")
+        else:
+            request.state.user = None
+            request.state.session_id = str(uuid.uuid4())  # Generowanie unikalnego session_id
+            logger.info(f"Sesja gościa: {request.state.session_id}")
 
-        if not token:
-            raise HTTPException(status_code=403, detail="Authorization token missing")
-
-        # Remove "Bearer " from the token string
-        token = token.replace("Bearer ", "")
-
-        try:
-            # Verify the token with Firebase
-            decoded_token = auth.verify_id_token(token)
-            request.state.user = decoded_token  # Store decoded user info in request state
-        except Exception as e:
-            raise HTTPException(status_code=403, detail=f"Invalid token: {str(e)}")
-
-        # Call the next middleware or endpoint
-        response = await call_next(request)
-        return response
+        return await call_next(request)

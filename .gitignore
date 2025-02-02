@@ -55,3 +55,5 @@ app/lib/firebase_options.dart
 *.log
 .DS_Store
 Thumbs.db
+
+.env

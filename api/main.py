@@ -23,8 +23,10 @@ app.add_middleware(
 async def startup_event():
     await init_db()
 
+# Add Firebase Authentication middleware
 app.add_middleware(FirebaseAuthMiddleware)
 
+# Include routes for API endpoints
 app.include_router(router)
 
 @app.get("/")

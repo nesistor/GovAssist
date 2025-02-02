@@ -1,19 +1,17 @@
-from fastapi import APIRouter, Request, HTTPException, UploadFile
+from fastapi import APIRouter, Request, HTTPException, UploadFile, Depends 
 from typing import List
+from sqlalchemy.ext.asyncio import AsyncSession
+from api.db.session import get_async_session
 from api.services.openai_service import process_image_with_grok, process_document_with_text_model, generate_response
 from api.utils.image_utils import encode_image_to_base64, convert_pdf_to_images, pil_image_to_base64
-from api.models.document_models import DocumentCheckResult, QuestionRequest, DocumentRequest, DocumentResponse, FunctionCallResultMessage
+from api.models.document_models import DocumentCheckResult, ConversationMessage, QuestionRequest, QuestionResponse, DocumentRequest, DocumentResponse, FunctionCallResultMessage
 import tempfile
 import logging
 
 router = APIRouter()
 
-# Function to get user data from request state
-def get_current_user(request: Request):
-    user = getattr(request.state, "user", None)
-    if not user:
-        raise HTTPException(status_code=401, detail="User not authenticated")
-    return user
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 @router.get("/initial-message", response_model=str)
 def initial_message(request: Request):
@@ -31,6 +29,42 @@ def get_options(request: Request):
     user = get_current_user(request)  # Access the user from request state
     options = ["Drivers License", "ID", "Passport", "Something Else"]
     return options
+
+@router.get("/conversation-history", response_model=List[ConversationMessage])
+async def conversation_history(request: Request, session: AsyncSession = Depends(get_async_session)):
+    """
+    Pobiera historię konwersacji dla danego użytkownika.
+    """
+    user = await get_current_user(request)
+    user_id = user["uid"]
+    session_id = request.state.session_id  # Pobranie session_id z requestu
+
+    if not user_id or not session_id:
+        raise HTTPException(status_code=400, detail="Brak wymaganych parametrów: user_id lub session_id")
+
+    try:
+        history = await get_conversation_history(session, user_id, session_id)
+        return history
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Błąd podczas pobierania historii rozmów: {str(e)}")    
+
+@router.get("/conversation-title")
+async def get_conversation_title(request: Request):
+    """
+    Zwraca tytuł konwersacji dla danego użytkownika.
+    """
+    user = get_current_user(request)
+    user_id = user["uid"]
+    session_id = request.state.session_id  
+
+    if not user_id or not session_id:
+        raise HTTPException(status_code=400, detail="Brak wymaganych danych: user_id lub session_id")
+
+    try:
+        title = await generate_conversation_title(user_id, session_id)
+        return {"user_id": user_id, "session_id": session_id, "title": title}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Błąd podczas generowania tytułu: {str(e)}")
 
 @router.post("/validate-document")
 def validate_document(request: Request, file: UploadFile):
@@ -60,16 +94,35 @@ def validate_document(request: Request, file: UploadFile):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error processing the document: {str(e)}")
 
-@router.post("/generate-response", response_model=str)
-def ask_question(request: Request, request_data: QuestionRequest):
-    user = get_current_user(request)  # Access the user from request state
-    session_id = user["uid"]  # Use Firebase UID as the session identifier
+def get_current_user(request: Request):
+    if request.state.user:
+        return {"uid": request.state.user["uid"], "is_authenticated": True}
+    return {"uid": request.state.session_id, "is_authenticated": False}
+
+@router.post("/generate-response", response_model=QuestionResponse)
+async def ask_question(request: Request, request_data: dict, session: AsyncSession = Depends(get_async_session)):
+    user = get_current_user(request)
+
+    # Check if the request asks for a new conversation
+    if request_data.get("start", False):  
+        session_id = str(uuid.uuid4())  # Generate a new session ID
+        logger.info(f"New conversation started. New Session ID: {session_id}")
+    else:
+        session_id = user["uid"]  # Use existing session ID
+
+    question = request_data.get("question")
+
+    if not question:
+        raise HTTPException(status_code=400, detail="Question is required")
+
+    logger.debug(f"User {session_id} asked: {question}")
 
     try:
-        logger.debug(f"User ID: {user['uid']}, Received request data: {request_data}")
+        response_message = await generate_response(request_data, session_id)
+        logger.debug(f"Response returned: {response_message}")
 
-        response = generate_response(request_data.dict(), session_id)
-        return response
+        return QuestionResponse(response=response_message, session_id=session_id)  # Return new session ID if changed
 
     except Exception as e:
+        logger.error(f"Error processing request: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error processing the request: {str(e)}")

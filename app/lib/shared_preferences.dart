@@ -1,25 +1,48 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SharedPreferencesHelper {
-  // Method to save user token to SharedPreferences
+  static const String _userTokenKey = 'userToken';
+  static const String _userUidKey = 'userUid'; // Klucz dla UID
+
+  // Zapisywanie tokenu
   static Future<void> saveUserToken(String token) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setString("user_token", token);
+    await prefs.setString(_userTokenKey, token);
   }
 
-  // Method to retrieve user token from SharedPreferences
+  // Zapisywanie UID
+  static Future<void> saveUserUid(String uid) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_userUidKey, uid);
+  }
+
+  // Pobieranie tokenu
   static Future<String?> getUserToken() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    return prefs.getString("user_token");
+    return prefs.getString(_userTokenKey);
   }
 
-  static Future<void> checkSignedIn(
-      Function(bool) onSignedInStatusChanged) async {
+  // Pobieranie UID
+  static Future<String?> getUserUid() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_userUidKey);
+  }
+
+  // Czyszczenie tokenu
+  static Future<void> clearUserToken() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_userTokenKey);
+    await prefs.remove(_userUidKey); // Usuwamy również UID
+  }
+
+  // Sprawdzanie statusu zalogowania
+  static Future<void> checkSignedIn(Function(bool) onSignedInStatusChanged) async {
     SharedPreferences s = await SharedPreferences.getInstance();
     bool _isSignedIn = s.getBool("is_signed_in") ?? false;
     onSignedInStatusChanged(_isSignedIn);
   }
 
+  // Zapisz status zalogowania
   static Future<void> setSignIn(bool isSignedIn) async {
     SharedPreferences s = await SharedPreferences.getInstance();
     s.setBool("is_signed_in", isSignedIn);

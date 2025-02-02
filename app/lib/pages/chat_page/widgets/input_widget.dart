@@ -16,30 +16,23 @@ class InputWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-      // Zmniejszenie marginesu
       child: Container(
         decoration: BoxDecoration(
           color: Theme
               .of(context)
-              .cardColor, // Szary kolor tła
-          borderRadius: BorderRadius.circular(25), // Zaokrąglone rogi
+              .cardColor,
+          borderRadius: BorderRadius.circular(25),
         ),
         child: Row(
           children: [
-            // Ikona załączania pliku wewnątrz pola tekstowego
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.transparent,
-              ),
-              child: IconButton(
-                icon: const Icon(Icons.attach_file),
-                color: Colors.white, // Biała ikona
-                iconSize: 20.0, // Zmniejszenie ikony
-                onPressed: onFileAttachment,
-              ),
+            // File attachment button
+            IconButton(
+              icon: const Icon(Icons.attach_file),
+              color: Colors.white,
+              iconSize: 20.0,
+              onPressed: onFileAttachment,
             ),
             const SizedBox(width: 8),
-            // Węższy TextField
             Expanded(
               child: TextField(
                 controller: controller,
@@ -48,6 +41,7 @@ class InputWidget extends StatelessWidget {
                     .textTheme
                     .bodyMedium,
                 onSubmitted: (_) => onSendMessage(),
+                // Enter to send message
                 maxLines: null,
                 decoration: InputDecoration(
                   hintText: 'Message Government Assistant',
@@ -59,23 +53,18 @@ class InputWidget extends StatelessWidget {
                   fillColor: Colors.transparent,
                   border: InputBorder.none,
                   contentPadding: const EdgeInsets.symmetric(
-                    vertical: 16, // Wysokość inputa
-                    horizontal: 16, // Odstępy wewnętrzne
+                    vertical: 16,
+                    horizontal: 16,
                   ),
                 ),
               ),
             ),
             const SizedBox(width: 8),
-            // Ikona wysyłania wiadomości wewnątrz pola tekstowego
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.transparent,
-              ),
-              child: IconButton(
-                icon: const Icon(Icons.send),
-                color: Colors.white,
-                onPressed: onSendMessage,
-              ),
+            // Send button
+            IconButton(
+              icon: const Icon(Icons.send),
+              color: Colors.white,
+              onPressed: onSendMessage,
             ),
           ],
         ),

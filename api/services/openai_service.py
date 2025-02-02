@@ -2,7 +2,9 @@ import logging
 from openai import OpenAI
 from fastapi import HTTPException
 import os
-from api.services.tools_function import switch_prompt, get_service_links_us, tools_definition
+from api.services.tools_definition import switch_prompt, get_service_links_us, tools_definition
+from api.db.session import SessionLocal
+from api.db.queries import get_conversation_history, add_message
 import json
 
 # API keys
@@ -137,30 +139,24 @@ def process_document_with_text_model(aggregated_results: list) -> dict:
         logger.error("Error processing document: %s", str(e))
         raise HTTPException(status_code=500, detail=f"Error processing document: {str(e)}")
 
-# A dictionary to store the conversation context per user (in a real scenario, this could be a database)
-user_conversations = {}
 
-async def generate_response(request: dict) -> str:
-    # Extract user ID, session ID, and question from the request
+async def generate_response(request: dict, session_id: str) -> str:
     user_id = request.get("user_id")
-    session_id = request.get("session_id")
     question = request.get("question")
 
-    # Ensure both user ID and session ID are provided
-    if not user_id or not session_id:
-        raise HTTPException(status_code=400, detail="User ID and Session ID are required")
+    if not question:
+        raise HTTPException(status_code=400, detail="Question is required")
 
     logger.info(f"Received question: {question} from session ID: {session_id}")
 
-    # Using async with for managing session within an async function
     async with SessionLocal() as session:
-        # Retrieve conversation history from the database
+        # Retrieve conversation history
         session_conversations = await get_conversation_history(session, user_id, session_id)
 
-        # Add user's question to the conversation history in the database
+        # Add user's question to conversation history
         await add_message(session, user_id, session_id, "user", question)
 
-        # Build base system messages for context
+        # Prepare base messages
         base_messages = [
             {
                 "role": "system",
@@ -172,12 +168,12 @@ async def generate_response(request: dict) -> str:
             }
         ]
 
-        # Append prior conversation and the current user question
+        # Append prior conversation and the current question
         base_messages.extend(session_conversations)
         base_messages.append({"role": "user", "content": question})
 
     try:
-        # Request response from the OpenAI model
+        # Request response from AI model
         logger.info("Requesting response from OpenAI model")
         response = client.chat.completions.create(
             model="grok-2-latest",
@@ -188,11 +184,14 @@ async def generate_response(request: dict) -> str:
         )
         logger.info("Response received from OpenAI model")
 
-        # Retrieve the model's response
-        model_response = response.choices[0].message
+        fingerprint = response.system_fingerprint  
+        logger.info(f"System Fingerprint: {fingerprint}")
 
-        # Process any tool calls from the model response
-        tool_calls = response.choices[0].message.tool_calls
+        model_response = response.choices[0].message
+        tool_calls = model_response.tool_calls
+
+        final_response = None
+
         if tool_calls:
             logger.info(f"Processing {len(tool_calls)} tool calls")
 
@@ -201,44 +200,68 @@ async def generate_response(request: dict) -> str:
                 tool_args = json.loads(tool_call.function.arguments)
                 logger.debug(f"Tool call: {tool_name}, Args: {tool_args}")
 
-                # Add ministry context if available
+                ministry = tool_args.get("ministry")
+
                 if ministry and tool_name == "retrieve_and_answer":
                     tool_args["ministry"] = ministry
 
                 # Execute the tool call
-                if tool_name == "retrieve_and_answer":
-                    tool_args["query"] = question
-                    tool_args["ministry"] = ministry
                 result = execute_tool(tool_name, tool_args)
 
-                # Handle the result of the tool call
                 if tool_name == "retrieve_and_answer":
-                    if "answer" in result:
-                        final_response = result["answer"]
-                    else:
-                        final_response = "I couldn't find an answer using the available tools."
-                    break  # Exit the loop after the RAG tool
+                    final_response = result.get("answer", "I couldn't find an answer using the available tools.")
+                    break  # Stop after processing RAG tool
 
-                # Process other types of tool results (e.g., links)
                 elif "link" in result:
                     final_response = f"Here is the link for driving license in Texas: {result['link']}"
-                    break  # Exit the loop once a valid response is found
+                    break  # Stop once a valid response is found
 
-            else:
-                # If no valid tool response, use the model's original response
-                final_response = model_response.content
-        else:
-            # If no tool calls, use the model's response
+        if not final_response:
             final_response = model_response.content
 
-        # Save the final response to the conversation history in the database
-        async with SessionLocal() as session:
-            await add_message(session, user_id, session_id, "assistant", final_response)
+        # Save assistant response if user is logged in
+        if user_id:
+            async with SessionLocal() as session:
+                await add_message(session, user_id, session_id, "assistant", final_response)
 
         logger.info("Final response processed successfully")
         return final_response
 
     except Exception as e:
-        # Log and raise an error if something goes wrong
         logger.error(f"Error generating response: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error processing the request: {str(e)}")
+
+
+async def generate_conversation_title(user_id: str, session_id: str) -> str:
+    """
+    Generates a title for a given conversation based on its history.
+    """
+    async with SessionLocal() as session:
+        history = await get_conversation_history(session, user_id, session_id)
+
+    if not history:
+        return "New Conversation"
+
+    messages = [{"role": msg["role"], "content": msg["content"]} for msg in history]
+
+    try:
+        response = client.chat.completions.create(
+            model=CHAT_MODEL_NAME,
+            messages=[
+                {
+                    "role": "system",
+                    "content": "Your task is to generate a short, relevant, and summarizing title for this conversation. "
+                               "The title should be concise, descriptive, and no more than 6 words."
+                },
+                *messages
+            ],
+            max_tokens=20
+        )
+        
+        title = response.choices[0].message.content.strip()
+        logger.info(f"Generated conversation title: {title}")
+        return title
+
+    except Exception as e:
+        logger.error(f"Error generating conversation title: {str(e)}")
+        return "Unknown Title"

@@ -12,6 +12,7 @@ import 'package:government_assistant/shared_preferences.dart';
 import 'package:government_assistant/utils/utils.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
+import 'package:government_assistant/shared_preferences.dart';
 
 import 'package:government_assistant/pages//chat_page/chat_page.dart';
 
@@ -58,7 +59,12 @@ class AuthProvider extends ChangeNotifier {
       if (user != null) {
         IdTokenResult tokenResult = await user.getIdTokenResult();
         String token = tokenResult.token ?? "";
+        String uid = user.uid;
+        
+        // Zapisz token i UID w SharedPreferences
         await SharedPreferencesHelper.saveUserToken(token);
+        await SharedPreferencesHelper.saveUserUid(uid); // Dodajemy metodę zapisu uid
+
         return tokenResult.token;
       }
     } catch (e) {
@@ -91,16 +97,19 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> signInWithEmailPassword(BuildContext context, String email,
-      String password) async {
+  Future<void> signInWithEmailPassword(BuildContext context, String email, String password) async {
     _isLoading = true;
     notifyListeners();
     try {
-      UserCredential userCredential = await _firebaseAuth
-          .signInWithEmailAndPassword(email: email, password: password);
+      UserCredential userCredential = await _firebaseAuth.signInWithEmailAndPassword(email: email, password: password);
       _uid = userCredential.user?.uid;
       await getDataFromFirestore();
       setSignedInStatus();
+
+      String? token = await getUserToken();
+      if (token != null) {
+        await SharedPreferencesHelper.saveUserToken(token);
+      }
 
       Navigator.pushReplacement(
         context,
@@ -230,6 +239,9 @@ class AuthProvider extends ChangeNotifier {
     _isSignedIn = false;
     notifyListeners();
     s.clear();
+
+    // Usuń token
+    await SharedPreferencesHelper.clearUserToken();
   }
 }
 
@@ -238,4 +250,5 @@ Future<bool> isEmailRegistered(String email) async {
   await FirebaseAuth.instance.fetchSignInMethodsForEmail(email);
   return signInMethods.isNotEmpty;
 }
+
 

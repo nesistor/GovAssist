@@ -1,0 +1,40 @@
+services:
+
+  govasisst-service:
+    build:
+      context: ./../govassist-service
+      dockerfile: ./../govassist-service/govassist-service.dockerfile
+    restart: always
+    ports:
+      - "8081:80"
+      - "50001:50001"
+    deploy:
+      mode: replicated
+      replicas: 1
+    environment:
+      DSN: "host=postgres port=5432 user=postgres password=password dbname=conversations sslmode=disable timezone=UTC connect_timeout=5"
+    depends_on:
+      - postgres
+    networks:
+      - postgres-net
+      - default
+  
+  postgres:
+    image: 'postgres:14.0'
+    ports:
+      - "5433:5432"
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: conversations
+    volumes:
+      - ./db-data/postgres/:/var/lib/postgresql/data/
+    networks:
+      - postgres-net
+
+networks:
+  default:
+    driver: bridge
+  postgres-net:
+    driver: bridge
