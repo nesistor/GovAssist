@@ -10,9 +10,14 @@ import 'theme/theme_data.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+    print('Firebase został poprawnie zainicjalizowany!');
+  } catch (e) {
+    print('Błąd inicjalizacji Firebase: $e');
+  }
 
   runApp(const MyApp());
 }

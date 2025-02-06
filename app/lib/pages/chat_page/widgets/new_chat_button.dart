@@ -10,7 +10,8 @@ class NewChatButton extends StatelessWidget {
     return ElevatedButton(
       onPressed: () {
         // Trigger startNewChat to reset the chat
-        Provider.of<ApiProvider>(context, listen: false).startNewChat();
+        final apiProvider = Provider.of<ApiProvider>(context, listen: false);
+        apiProvider.startNewChat();
       },
       style: ElevatedButton.styleFrom(
         backgroundColor: Theme

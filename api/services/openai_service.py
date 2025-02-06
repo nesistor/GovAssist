@@ -31,6 +31,65 @@ def execute_tool(tool_name: str, tool_args: dict) -> dict:
     else:
         raise ValueError(f"Tool {tool_name} not found")
 
+async def generate_initial_message(name: str = None, user_id: str = None) -> str:
+    """
+    Generates a concise initial greeting message with no extra details.
+    
+    Parameters:
+      - name (str): The name of the user. Defaults to "citizen" if not provided.
+      - user_id (str): The ID of the user; if provided, it will be included in the metadata.
+    
+    The function constructs a prompt that includes the name and calls the Grok endpoint with
+    a metadata field. The metadata is sent as a list where the first element is null and the second
+    element contains user_id.
+    
+    Returns:
+      A string containing a short initial greeting message.
+    """
+    # Use "citizen" if name is None or empty.
+    if not name:
+        name = "citizen"
+
+    # Construct the prompt with just the greeting message
+    prompt = f"""
+    Human: Hello, my name is {name}. How can I get assistance with government services?
+    
+    Assistant: Hey {name}! What would you like assistance with today? 📋
+    """
+
+    # Build the metadata payload; the first element is None, the second element contains user_id.
+    metadata = [None, {"user_id": user_id}]
+    
+    try:
+        # Call the Grok completions endpoint with the additional metadata
+        response = client.completions.create(
+            model="grok-2-latest",
+            max_tokens=60,  # Keep the response short
+            temperature=0.7,  # A bit of creativity for a friendly response
+            prompt=prompt,
+        )
+    
+        # Log the raw API response to check its structure
+        logger.info(f"Raw API response: {response}")
+    
+        # Try accessing the response differently depending on its structure
+        if hasattr(response, 'choices') and len(response.choices) > 0:
+            completion = response.choices[0].text.strip()
+            # Return just the short greeting without additional info
+            initial_message = f"Hey {name}! What would you like assistance with today? 📋"  
+            logger.info(f"Initial message generated: {initial_message}")
+            return initial_message
+        else:
+            logger.error("Response does not contain expected 'choices' attribute.")
+            raise HTTPException(status_code=500, detail="Error generating initial message")
+    
+    except Exception as e:
+        logger.error(f"Error generating initial message: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error generating initial message")
+
+
+
+
 def process_image_with_grok(base64_image: str) -> dict:
     try:
         logger.debug("Sending request to Grok Vision model.")

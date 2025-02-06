@@ -23,5 +23,5 @@ async def scrape_with_ai(url):
     return response.choices[0].message
 
 import asyncio
-result = asyncio.run(scrape_with_ai("https://news.ycombinator.com"))
+result = asyncio.run(scrape_with_ai("https://azmvdnow.gov/home"))
 print(result)

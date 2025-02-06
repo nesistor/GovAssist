@@ -182,26 +182,3 @@ tools_definition = [
 
 
 
-
-# Define tools for function calling
-    # {
-#     "type": "function",  # Specifies that this is a function type object
-#     "function": {
-#         "name": "retrieve_relevant_chunks",  # The name of the function
-#         "description": "Retrieve the most relevant document chunks based on the user's query",  # A brief description of what the function does
-#         "parameters": {  # Defines the parameters that the function accepts
-#             "type": "object",  # The parameters are an object (a dictionary in Python)
-#             "properties": {  # Specifies the properties (keys) inside the object (parameters)
-#                 "query": {  # The 'query' parameter
-#                     "type": "string",  # The type of the 'query' parameter is a string
-#                     "description": "User's query."  # A brief description of what the 'query' represents
-#                 },
-#                 "category": {  # The 'category' parameter
-#                     "type": "string",  # The type of the 'category' parameter is a string
-#                     "description": "The category of the documents."  # A brief description of what the 'category' represents
-#                 }
-#             },
-#             "required": ["query", "category"]  # The 'query' and 'category' parameters are required when calling the function
-#         }
-#     }
-# },

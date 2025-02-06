@@ -1,5 +1,6 @@
 from pydantic import BaseModel
-from typing import List
+from typing import List, Optional
+
 
 class DocumentCheckResult(BaseModel):
     is_valid: bool
@@ -30,3 +31,14 @@ class ConversationMessage(BaseModel):
     content: str
 
 
+class InitialMessageRequest(BaseModel):
+    """Request model for the /initial-message endpoint."""
+    uid: Optional[str] = None  # Optional UID parameter
+
+class InitialMessageResponse(BaseModel):
+    """Response model for the /initial-message endpoint."""
+    message: str  # Greeting message
+
+class OptionsResponse(BaseModel):
+    """Response model for the /options endpoint."""
+    options: List[str]  # List of predefined options

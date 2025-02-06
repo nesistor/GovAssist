@@ -12,6 +12,7 @@ class ApiProvider with ChangeNotifier {
   final List<String> _conversationTitles = [];
   bool _isLoading = false;
   String _initialMessage = '';
+  List<String> _options = [];
 
   List<Message> get messages => _messages;
 
@@ -20,6 +21,8 @@ class ApiProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
 
   String get initialMessage => _initialMessage;
+
+  List<String> get options => _options;
 
   ApiProvider() {
     _fetchInitialMessage(); // Fetch the initial message when ApiProvider is created
@@ -31,6 +34,8 @@ class ApiProvider with ChangeNotifier {
     _messages.clear();
     _initialMessage = '';
     _isLoading = false;
+    _fetchInitialMessage(); // Add this line to fetch the initial message again
+    fetchOptions(); // Add this line to fetch options again
     notifyListeners(); // Notify listeners to rebuild UI
   }
 
@@ -74,16 +79,30 @@ class ApiProvider with ChangeNotifier {
 
 
   Future<void> _fetchInitialMessage() async {
-    var url = Uri.parse(
-        'https://government-assistant-api-183025368636.us-central1.run.app/initial-message');
+    String? uid = await SharedPreferencesHelper.getUserUid();
+
+    var uri = Uri.parse('http://127.0.0.1:8000/initial-message');
+    var url = uri.replace(queryParameters: {'uid': uid ?? ''});
+
     try {
       var response = await http.get(url);
       if (response.statusCode == 200) {
         var responseBody = utf8.decode(response.bodyBytes);
 
-        // Remove the quotes from the initial message
-        _initialMessage = responseBody.replaceAll('"', '').trim();
+        // Decode the JSON response
+        var responseData = json.decode(responseBody);
 
+        // Assuming the response contains a field 'message'
+        if (responseData.containsKey('message')) {
+          // Extract the message and clean it (remove quotes and extra characters)
+          _initialMessage = responseData['message']?.toString().trim() ??
+              'No message available';
+
+          // Remove the <|eos|> if it exists
+          _initialMessage = _initialMessage.replaceAll('<|eos|>', '').trim();
+        } else {
+          _initialMessage = 'No message found in the response';
+        }
         notifyListeners();
       } else {
         throw Exception('Failed to fetch initial message');
@@ -93,6 +112,42 @@ class ApiProvider with ChangeNotifier {
       notifyListeners();
     }
   }
+
+
+  Future<void> fetchOptions() async {
+    var url = Uri.parse(
+        'https://government-assistant-api-183025368636.us-central1.run.app/options');
+    try {
+      String? token = await SharedPreferencesHelper.getUserToken();
+      String? uid = await SharedPreferencesHelper.getUserUid();
+
+      if (token == null || uid == null) {
+        throw Exception('User is not authenticated');
+      }
+
+      var response = await http.get(
+        url,
+        headers: {'Authorization': 'Bearer $token'},
+      );
+
+      if (response.statusCode == 200) {
+        var responseBody = utf8.decode(response.bodyBytes);
+        var responseData = json.decode(responseBody);
+
+        if (responseData is Map && responseData.containsKey('options')) {
+          // Set your options here
+          List<String> options = List<String>.from(responseData['options']);
+          _options = options; // This should work now
+          notifyListeners();
+        }
+      } else {
+        throw Exception('Failed to fetch options');
+      }
+    } catch (e) {
+      print('Error fetching options: $e');
+    }
+  }
+
 
   Future<void> uploadDocument(Uint8List fileBytes, String fileName) async {
     var url = Uri.parse(
@@ -144,27 +199,26 @@ class ApiProvider with ChangeNotifier {
     try {
       _setLoading(true);
 
-      // Fetch token and UID from SharedPreferences
       String? token = await SharedPreferencesHelper.getUserToken();
       String? uid = await SharedPreferencesHelper.getUserUid();
 
-      if (token == null || uid == null) {
-        throw Exception('User is not authenticated');
-      }
+      print("Sending request as ${uid ?? 'Guest'}");
 
-      print("Sending token: $token and UID: $uid");
-
-      // Add user message to the list
       _addMessage(Message(message: question, isUserMessage: true));
+
+      var headers = {'Content-Type': 'application/json; charset=utf-8'};
+
+      // Add Authorization header only if token exists (for authenticated users)
+      if (token != null) {
+        headers['Authorization'] = 'Bearer $token';
+      }
 
       var response = await http.post(
         url,
-        headers: {
-          'Content-Type': 'application/json; charset=utf-8',
-          'Authorization': 'Bearer $token',
-        },
+        headers: headers,
         body: json.encode({
-          'uid': uid,
+          'uid': uid ?? '',
+          // Send uid even if user is guest, but no token needed
           'question': question,
         }),
       );
@@ -173,47 +227,23 @@ class ApiProvider with ChangeNotifier {
         var responseBody = utf8.decode(response.bodyBytes);
         var responseData = json.decode(responseBody);
 
-        // Print the full response data to inspect its structure
-        print("Full response data: $responseData");
-
-        // Ensure the response is not null and contains the 'response' key
-        if (responseData != null && responseData.containsKey('response')) {
-          var serverResponse = responseData['response'];
-
-          // If the response is a string, process it as usual
-          if (serverResponse is String) {
-            print("Assistant's response: $serverResponse");
-            _addMessage(Message(
-              message: serverResponse,
-              isUserMessage: false,
-              isMarkdown: true,
-            ));
-          }
-          // If the response is an integer, convert it to a string and process
-          else if (serverResponse is int) {
-            print("Assistant's response (integer): $serverResponse");
-            _addMessage(Message(
-              message: serverResponse.toString(),
-              isUserMessage: false,
-              isMarkdown: true,
-            ));
-          }
-          // Handle other unexpected types
-          else {
-            _addMessage(Message(
-              message: 'Unexpected response format: $serverResponse',
-              isUserMessage: false,
-            ));
-          }
-        } else {
-          // Handle the case where the response does not contain the expected key
+        if (responseData.containsKey('response')) {
           _addMessage(Message(
-            message: 'No valid response received from the server',
+            message: responseData['response'],
+            isUserMessage: false,
+            isMarkdown: true,
+          ));
+        } else {
+          _addMessage(Message(
+            message: 'No valid response received',
             isUserMessage: false,
           ));
         }
       } else {
-        throw Exception('Failed to load response');
+        _addMessage(Message(
+          message: 'Server error: ${response.reasonPhrase}',
+          isUserMessage: false,
+        ));
       }
     } catch (e) {
       _addMessage(Message(
