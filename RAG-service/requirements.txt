@@ -1,0 +1,6 @@
+fastapi
+openai
+google-cloud-firestore
+numpy
+requests
+uvicorn
