@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'providers/api_provider.dart';
+import 'providers/chat_provider.dart';
 import 'providers/auth_provider.dart';
 import 'package:government_assistant/pages//chat_page/chat_page.dart';
 import 'theme/theme_data.dart';
@@ -29,6 +30,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
+        ChangeNotifierProvider(create: (_) => ChatProvider()),
         ChangeNotifierProvider(create: (_) => ApiProvider()),
         ChangeNotifierProvider(create: (_) => AuthProvider()),
 

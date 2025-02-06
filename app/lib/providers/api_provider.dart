@@ -40,9 +40,13 @@ class ApiProvider with ChangeNotifier {
   }
 
 
-  Future<void> fetchConversationTitles() async {
+  Future<void> fetchConversationTitles(String timeRange) async {
+    _isLoading = true;
+    notifyListeners();
+
     var url = Uri.parse(
-        'https://government-assistant-api-183025368636.us-central1.run.app/conversation-title');
+        'https://government-assistant-api-183025368636.us-central1.run.app/conversation-title?timeRange=$timeRange');
+
     try {
       String? token = await SharedPreferencesHelper.getUserToken();
       String? uid = await SharedPreferencesHelper.getUserUid();
@@ -61,12 +65,13 @@ class ApiProvider with ChangeNotifier {
         var responseData = json.decode(responseBody);
 
         if (responseData is List) {
-          _conversationTitles.clear();
+          conversationTitles.clear();
           for (var item in responseData) {
             if (item is Map<String, dynamic> && item.containsKey('title')) {
-              _conversationTitles.add(item['title']);
+              conversationTitles.add(item['title']);
             }
           }
+          _isLoading = false;
           notifyListeners();
         }
       } else {
@@ -74,8 +79,11 @@ class ApiProvider with ChangeNotifier {
       }
     } catch (e) {
       print('Error fetching conversation titles: $e');
+      _isLoading = false;
+      notifyListeners();
     }
   }
+
 
 
   Future<void> _fetchInitialMessage() async {

@@ -30,7 +30,6 @@ def execute_tool(tool_name: str, tool_args: dict) -> dict:
         return tool_function(**tool_args)
     else:
         raise ValueError(f"Tool {tool_name} not found")
-
 async def generate_initial_message(name: str = None, user_id: str = None) -> str:
     """
     Generates a concise initial greeting message with no extra details.
@@ -50,23 +49,23 @@ async def generate_initial_message(name: str = None, user_id: str = None) -> str
     if not name:
         name = "citizen"
 
-    # Construct the prompt with just the greeting message
-    prompt = f"""
-    Human: Hello, my name is {name}. How can I get assistance with government services?
-    
-    Assistant: Hey {name}! What would you like assistance with today? 📋
-    """
+    # Construct the messages list with the conversation prompt
+    messages = [
+        {"role": "user", "content": f"Hello, my name is {name}. How can I get assistance with government services?"},
+        {"role": "assistant", "content": f"Hey {name}! What would you like assistance with today? 📋"}
+    ]
 
     # Build the metadata payload; the first element is None, the second element contains user_id.
     metadata = [None, {"user_id": user_id}]
     
     try:
-        # Call the Grok completions endpoint with the additional metadata
-        response = client.completions.create(
+        # Call the Grok completions endpoint with the correct messages format
+        response = client.chat.completions.create(
             model="grok-2-latest",
             max_tokens=60,  # Keep the response short
             temperature=0.7,  # A bit of creativity for a friendly response
-            prompt=prompt,
+            messages=messages,
+            metadata=metadata,
         )
     
         # Log the raw API response to check its structure
@@ -74,7 +73,8 @@ async def generate_initial_message(name: str = None, user_id: str = None) -> str
     
         # Try accessing the response differently depending on its structure
         if hasattr(response, 'choices') and len(response.choices) > 0:
-            completion = response.choices[0].text.strip()
+            # Access the 'content' of the message in the first choice
+            completion = response.choices[0].message.content.strip()
             # Return just the short greeting without additional info
             initial_message = f"Hey {name}! What would you like assistance with today? 📋"  
             logger.info(f"Initial message generated: {initial_message}")
@@ -86,6 +86,7 @@ async def generate_initial_message(name: str = None, user_id: str = None) -> str
     except Exception as e:
         logger.error(f"Error generating initial message: {str(e)}")
         raise HTTPException(status_code=500, detail="Error generating initial message")
+
 
 
 
@@ -148,7 +149,8 @@ def process_document_with_text_model(aggregated_results: list) -> dict:
                        - Acknowledge the user's effort.
                        - Verify if the values provided are logical and valid.
                        ``` 
-                       {completed_fields}
+                       {completed_fields}async def generate_response(request: dict, session_id: str) -> str:
+ 
                        ```
 
                     2. **Empty Fields**:
