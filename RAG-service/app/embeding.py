@@ -1,15 +1,15 @@
 import openai
-from settings import OPENAI_EMBEDDING_API_KEY, OPENAI_API_BASE, OPENAI_MODEL
+from settings import XAI_API_KEY, XAI_API_BASE, XAI_MODEL
 
 # Configure OpenAI SDK
-openai.api_key = OPENAI_EMBEDDING_API_KEY
-openai.api_base = OPENAI_API_BASE
+openai.api_key = XAI_API_KEY
+openai.api_base = XAI_API_BASE
 
 async def get_embedding(text: str):
     """Get embedding vector from OpenAI via x.ai"""
     try:
         response = await openai.Embedding.acreate(
-            model=OPENAI_MODEL,
+            model=XAI_MODEL,
             input=text,
             encoding_format="float"
         )

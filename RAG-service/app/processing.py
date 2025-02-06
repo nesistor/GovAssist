@@ -7,6 +7,9 @@ from settings import db
 from embedding import get_embedding
 import openai
 
+openai.api_key = AIML_API_KEY
+openai.api_base = AIML_API_BASE
+
 async def chunk_text(text: str, chunk_size: int = 5000):
     """Splits text into smart chunks, considering code blocks and paragraphs."""
     chunks = []
