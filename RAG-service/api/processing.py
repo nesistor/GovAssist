@@ -2,9 +2,10 @@ import json
 import asyncio
 from datetime import datetime, timezone
 from urllib.parse import urlparse
+from api.faiss_index import add_embeddings_to_faiss
 
-from settings import db
-from embedding import get_embedding
+from api.settings import db
+from api.embedding import get_embedding
 import openai
 
 openai.api_key = AIML_API_KEY
@@ -42,9 +43,8 @@ async def get_title_and_summary(chunk: str, url: str):
     except Exception as e:
         print(f"Error processing title & summary: {e}")
         return {"title": "Unknown", "summary": "Error extracting summary"}
-
 async def process_chunk(chunk: str, chunk_number: int, url: str):
-    """Process text chunk: extract title, summary, embedding & store in Firestore."""
+    """Przetwarza fragment tekstu: generuje embedding, zapisuje do Firestore i FAISS"""
     extracted = await get_title_and_summary(chunk, url)
     embedding = await get_embedding(chunk)
     metadata = {
@@ -53,14 +53,16 @@ async def process_chunk(chunk: str, chunk_number: int, url: str):
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "url_path": urlparse(url).path
     }
-    doc_ref = db.collection("documents").document(f"{url}_chunk{chunk_number}")
-    doc_ref.set({
+
+    doc_id = f"{url}_chunk{chunk_number}"
+    db.collection("documents").document(doc_id).set({
         "url": url,
         "chunk_number": chunk_number,
         "title": extracted["title"],
         "summary": extracted["summary"],
         "content": chunk,
-        "metadata": metadata,
-        "embedding": embedding
+        "metadata": metadata
     })
-    print(f"Stored chunk {chunk_number} for {url}")
+
+    # Dodaj embedding do FAISS
+    add_embeddings_to_faiss([embedding], [doc_id])

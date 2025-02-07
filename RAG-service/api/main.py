@@ -1,6 +1,6 @@
 from fastapi import FastAPI
-from firestore import retrieve_relevant_docs
-from sitemap import get_pydantic_ai_docs_urls
+from api.firestore import retrieve_relevant_docs
+from api.sitemap import get_pydantic_ai_docs_urls
 
 app = FastAPI()
 
