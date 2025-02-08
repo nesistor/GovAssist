@@ -1,7 +1,7 @@
 from sqlalchemy.future import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from datetime import datetime
-from api.db.models import ConversationMessage
+from api.db.models import ConversationMessage, DocumentAnalysis
 
 async def get_conversation_history(session: AsyncSession, user_id: str, session_id: str):
     """
@@ -84,3 +84,19 @@ async def get_conversations_with_pagination(
     conversations = result.scalars().all()
     
     return [{"role": msg.role, "content": msg.content, "timestamp": msg.timestamp} for msg in conversations]
+
+async def get_document_analysis(session, session_id: str):
+    result = await session.execute(
+        select(DocumentAnalysis)
+        .where(DocumentAnalysis.session_id == session_id)
+    )
+    return result.scalars().first()
+
+async def save_document_analysis(session, session_id: str, document_path: str, fields: str):
+    analysis = DocumentAnalysis(
+        session_id=session_id,
+        document_path=document_path,
+        fields=fields
+    )
+    session.add(analysis)
+    await session.commit()

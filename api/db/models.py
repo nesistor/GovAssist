@@ -12,3 +12,10 @@ class ConversationMessage(Base):
     role = Column(String)  # "user" or "assistant"
     content = Column(Text)
     timestamp = Column(DateTime, default=datetime.utcnow)
+
+class DocumentAnalysis(Base):
+    __tablename__ = "document_analysis"
+    
+    session_id = Column(String, primary_key=True)
+    document_path = Column(String)
+    fields = Column(Text)  # JSON jako string

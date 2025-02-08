@@ -4,12 +4,10 @@ import io
 from typing import List
 from pdf2image import convert_from_path
 
-def encode_image_to_base64(image_file: io.BytesIO) -> str:
-    """Encodes an image file to Base64."""
+def encode_image_to_base64(image_file: Image.Image) -> str:
+    """Encodes a PIL image to Base64."""
     try:
-        image_file.seek(0)  # Resets the file pointer to the beginning
-        image_data = image_file.read()
-        return base64.b64encode(image_data).decode('utf-8')
+        return pil_image_to_base64(image_file)
     except Exception as e:
         raise ValueError(f"Error encoding image to Base64: {e}")
 

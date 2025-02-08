@@ -11,7 +11,7 @@ async def get_embedding(text: str):
         response = await openai.Embedding.acreate(
             model=XAI_MODEL,
             input=text
-        )
+        )   
         return response["data"][0]["embedding"]
     except Exception as e:
         print(f"Błąd przy pobieraniu embeddingu: {e}")

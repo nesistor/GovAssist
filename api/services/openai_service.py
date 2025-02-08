@@ -1,10 +1,12 @@
 import logging
+import uuid
 from openai import OpenAI
 from fastapi import HTTPException
 import os
 from api.services.tools_definition import switch_prompt, get_service_links_us, tools_definition
 from api.db.session import SessionLocal
-from api.db.queries import get_conversation_history, add_message
+from api.db.queries import get_conversation_history, add_message, get_document_analysis
+from api.services.fill_pdf_service import fill_pdf_service
 import json
 
 # API keys
@@ -104,7 +106,7 @@ def process_image_with_grok(base64_image: str) -> dict:
                             "type": "image_url",
                             "image_url": {
                                 "url": f"data:image/jpeg;base64,{base64_image}",
-                                "detail": "high",  # Image detail level
+                                "detail": "low",  # Image detail level
                             },
                         },
                         {
@@ -195,7 +197,7 @@ def process_document_with_text_model(aggregated_results: list) -> dict:
                 {"role": "user", "content": document_context},
             ],
         )
-        return response.choices[0].messagev
+        return response.choices[0].message
     except Exception as e:
         logger.error("Error processing document: %s", str(e))
         raise HTTPException(status_code=500, detail=f"Error processing document: {str(e)}")
@@ -255,28 +257,56 @@ async def generate_response(request: dict, session_id: str) -> str:
 
         if tool_calls:
             logger.info(f"Processing {len(tool_calls)} tool calls")
-
+            
             for tool_call in tool_calls:
                 tool_name = tool_call.function.name
                 tool_args = json.loads(tool_call.function.arguments)
                 logger.debug(f"Tool call: {tool_name}, Args: {tool_args}")
 
-                ministry = tool_args.get("ministry")
-
-                if ministry and tool_name == "retrieve_and_answer":
-                    tool_args["ministry"] = ministry
-
-                # Execute the tool call
-                result = execute_tool(tool_name, tool_args)
-
+                # Obsługa istniejących narzędzi
                 if tool_name == "retrieve_and_answer":
+                    ministry = tool_args.get("ministry")
+                    result = execute_tool(tool_name, tool_args)
                     final_response = result.get("answer", "I couldn't find an answer using the available tools.")
-                    break  # Stop after processing RAG tool
+                    
+                elif tool_name == "get_service_links_us":
+                    result = execute_tool(tool_name, tool_args)
+                    if "link" in result:
+                        final_response = f"Here is the link: {result['link']}"
+                        
+                # Nowa funkcjonalność: dynamiczne wypełnianie formularza
+                elif tool_name == "dynamic_form_filler":
+                    current_state = tool_args.get('current_step', {})
+                    
+                    # Pobierz strukturę formularza z bazy danych
+                    async with SessionLocal() as session:
+                        analysis = await get_document_analysis(session, session_id)
+                        form_structure = json.loads(analysis.fields) if analysis else []
+                    
+                    required_fields = [f for f in form_structure if f.get('is_required')]
+                    
+                    # Inicjalizacja stanu jeśli potrzeba
+                    if not current_state.get('remaining_fields'):
+                        current_state['remaining_fields'] = required_fields.copy()
+                        current_state['collected_data'] = {}
+                    
+                    if current_state['remaining_fields']:
+                        next_field = current_state['remaining_fields'].pop(0)
+                        final_response = f"Proszę podać {next_field['field_name']} ({next_field['required_value']}):"
+                    else:
+                        # Generuj PDF gdy wszystkie dane są zebrane
+                        filled_pdf = await fill_pdf_service(
+                            analysis.document_path,
+                            current_state['collected_data']
+                        )
+                        download_url = generate_download_link(filled_pdf)
+                        final_response = f"Formularz gotowy! Pobierz tutaj: {download_url}"
+                        
+                else:
+                    logger.warning(f"Unknown tool called: {tool_name}")
+                    continue
 
-                elif "link" in result:
-                    final_response = f"Here is the link for driving license in Texas: {result['link']}"
-                    break  # Stop once a valid response is found
-
+        # Zachowaj istniejącą logikę dla odpowiedzi
         if not final_response:
             final_response = model_response.content
 
@@ -294,7 +324,7 @@ async def generate_response(request: dict, session_id: str) -> str:
 
 
 async def generate_conversation_title(user_id: str, session_id: str) -> str:
-    """
+    """ 
     Generates a title for a given conversation based on its history.
     """
     async with SessionLocal() as session:
@@ -326,3 +356,10 @@ async def generate_conversation_title(user_id: str, session_id: str) -> str:
     except Exception as e:
         logger.error(f"Error generating conversation title: {str(e)}")
         return "Unknown Title"
+
+def generate_download_link(pdf_content: bytes) -> str:
+    # Tymczasowe rozwiązanie - zapisz plik i zwróć ścieżkę
+    file_path = f"/tmp/filled_form_{uuid.uuid4()}.pdf"
+    with open(file_path, "wb") as f:
+        f.write(pdf_content)
+    return f"/download?file={file_path}"

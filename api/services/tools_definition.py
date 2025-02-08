@@ -56,18 +56,6 @@ def get_service_links_us(state: str, service_type: str) -> Dict[str, str]:
     return {"link": links[service_type]}
 
 
-# Tool function to use RAG
-def retrieve_and_answer(query: str, ministry: str) -> Dict[str, str]:
-    """
-    Retrieves relevant documents based on the query and ministry, and then generates an answer.
-    """
-    relevant_docs = retrieve_relevant_documents(query, ministry)
-    if not relevant_docs:
-        return {"answer": "I couldn't find any relevant documents to answer your question."}
-
-    answer = generate_answer_with_context(query, relevant_docs)
-    return {"answer": answer}
-
 
 
 # Define tools for function calling (Updated with RAG tool)
@@ -114,71 +102,64 @@ tools_definition = [
         "type": "function",
         "function": {
             "name": "retrieve_and_answer",
-            "description": "Retrieves relevant documents and answers the question based on them.",
+            "description": "Wyszukuje dokumenty i generuje odpowiedź na podstawie RAG.",
             "parameters": {
                 "type": "object",
                 "properties": {
                     "query": {
                         "type": "string",
-                        "description": "The user's query or question."
+                        "description": "Zapytanie użytkownika dotyczące procedur lub regulacji ministerstwa."
                     },
                     "ministry": {
                         "type": "string",
-                        "description": "The relevant ministry, e.g., 'dmv', 'tax'."
+                        "description": "Ministerstwo, np. 'dmv', 'tax', 'health'."
                     }
                 },
                 "required": ["query", "ministry"]
             }
         }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "collect_form_data",
+            "description": "fills in the form based on the entered personal data",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "field_name": {
+                        "type": "string",
+                        "description": "Nazwa pola do wypełnienia"
+                    },
+                    "current_data": {
+                        "type": "object",
+                        "description": "Aktualnie zebrane dane w formacie JSON"
+                    }
+                },
+                "required": ["field_name", "current_data"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "dynamic_form_filler",
+            "description": "Kolekcjonuje dane do dynamicznego wypełniania formularza PDF na podstawie analizy dokumentu",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "current_step": {
+                        "type": "object",
+                        "description": "Aktualny stan wypełniania formularza",
+                        "properties": {
+                            "current_field": {"type": "string"},
+                            "collected_data": {"type": "object"},
+                            "remaining_fields": {"type": "array"}
+                        }
+                    }
+                },
+                "required": ["current_step"]
+            }
+        }
     }
 ]
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

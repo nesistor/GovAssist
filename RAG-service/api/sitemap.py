@@ -1,9 +1,17 @@
 import requests
 from xml.etree import ElementTree
 
+def get_main_urls():
+    return [
+        "https://mojastrona.com/dokumentacja1",
+        "https://mojastrona.com/dokumentacja2",
+        "https://mojastrona.com/dokumentacja3"
+    ]
+
+
 SITEMAP_URL = "https://ai.pydantic.dev/sitemap.xml"
 
-def get_pydantic_ai_docs_urls():
+def get_ai_docs_urls():
     """Fetch and parse documentation URLs from sitemap.xml"""
     try:
         response = requests.get(SITEMAP_URL)

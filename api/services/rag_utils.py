@@ -1,4 +1,3 @@
-from api.services.embedding_service import query_collection
 from typing import List
 from openai import OpenAI
 import os

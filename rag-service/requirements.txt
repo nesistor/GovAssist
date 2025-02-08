@@ -1,0 +1,7 @@
+crawl4ai
+faiss-cpu 
+google-cloud-firestore 
+httpx 
+openai 
+python-dotenv
+firebase_admin

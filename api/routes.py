@@ -5,7 +5,10 @@ from api.db.session import get_async_session
 from api.services.openai_service import process_image_with_grok, process_document_with_text_model, generate_response, generate_initial_message
 from api.utils.image_utils import encode_image_to_base64, convert_pdf_to_images, pil_image_to_base64
 from api.utils.firebase_utils import get_current_user_uid, get_user_name_from_firebase
-from api.models.document_models import DocumentCheckResult, ConversationMessage, QuestionRequest, QuestionResponse, DocumentRequest, DocumentResponse, FunctionCallResultMessage, InitialMessageResponse, InitialMessageResponse, InitialMessageResponse, OptionsResponse
+from api.models.api_models import (DocumentCheckResult, ConversationMessage, QuestionRequest, QuestionResponse, DocumentRequest, DocumentResponse,
+                                    FunctionCallResultMessage, InitialMessageResponse, InitialMessageResponse, InitialMessageResponse, OptionsResponse)
+from api.models.document_models import DocumentAnalysisResponse
+from api.services.image_service import analyze_document_with_vision
 import tempfile
 import logging
 
@@ -105,9 +108,8 @@ async def get_conversation_title(request: Request):
 
 @router.post("/validate-document")
 def validate_document(request: Request, file: UploadFile):
-    user = get_current_user(request)  # Access the user from request state
-    logger.debug(f"User ID: {user['uid']}, Received file: {file.filename}, content_type: {file.content_type}")
-
+    logger.debug(f"Received file: {file.filename}, content_type: {file.content_type}")
+    
     if file.content_type not in ["image/jpeg", "image/png", "application/pdf"]:
         raise HTTPException(status_code=400, detail="Unsupported file type. Only JPEG, PNG, and PDF are allowed.")
 
@@ -158,3 +160,39 @@ async def ask_question(request: Request, request_data: dict, session: AsyncSessi
     except Exception as e:
         logger.error(f"Error processing request: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error processing the request: {str(e)}")
+
+@router.post("/analyze-document", response_model=DocumentAnalysisResponse)
+async def analyze_document(request: Request, file: UploadFile):
+    """
+    Analizuje dokument i zwraca strukturyzowane dane o polach formularza
+    """
+    logger.debug(f"Otrzymano plik: {file.filename}, typ: {file.content_type}")
+    
+    if file.content_type not in ["image/jpeg", "image/png", "application/pdf"]:
+        raise HTTPException(status_code=400, detail="Nieobsługiwany typ pliku. Dopuszczalne formaty: JPEG, PNG, PDF.")
+
+    try:
+        base64_images = []
+
+        if file.content_type == "application/pdf":
+            with tempfile.NamedTemporaryFile(delete=True, suffix=".pdf") as temp_pdf:
+                temp_pdf.write(file.file.read())
+                temp_pdf.flush()
+                images = convert_pdf_to_images(temp_pdf.name)
+                base64_images = [pil_image_to_base64(image) for image in images]
+        else:
+            base64_image = encode_image_to_base64(file.file)
+            base64_images = [base64_image]
+
+        # Analizuj wszystkie obrazy i agreguj wyniki
+        results = []
+        for base64_image in base64_images:
+            analysis_result = analyze_document_with_vision(base64_image)
+            results.append(analysis_result)
+        
+        # Zwróć pierwszy wynik (lub zmodyfikuj logikę agregacji według potrzeb)
+        return results[0]
+
+    except Exception as e:
+        logger.error(f"Błąd analizy dokumentu: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Błąd przetwarzania dokumentu: {str(e)}")

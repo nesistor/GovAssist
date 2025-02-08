@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from api.firestore import retrieve_relevant_docs
-from api.sitemap import get_pydantic_ai_docs_urls
+from api.sitemap import get_ai_docs_urls
 
 app = FastAPI()
 
@@ -12,4 +12,4 @@ async def get_relevant_docs(query: str):
 @app.get("/docs/urls")
 def get_documentation_urls():
     """Get all available documentation URLs"""
-    return get_pydantic_ai_docs_urls()
+    return get_ai_docs_urls()
