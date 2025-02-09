@@ -16,7 +16,7 @@ if not FIREBASE_CREDENTIALS_PATH:
 logger.info(f"Używamy kredensjałów Firebase z: {FIREBASE_CREDENTIALS_PATH}")
 
 try:
-    cred = credentials.Certificate(FIREBASE_CREDENTIALS_PATH)
+    cred = credentials.Certificate(FIREBASE_CREDENTIALS_PATH)   
     initialize_app(cred)
     logger.info("Firebase Admin SDK został pomyślnie zainicjowany")
 except Exception as e:

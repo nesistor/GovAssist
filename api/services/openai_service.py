@@ -5,7 +5,7 @@ from fastapi import HTTPException
 import os
 from api.services.tools_definition import switch_prompt, get_service_links_us, tools_definition
 from api.db.database import SessionLocal
-from api.db.queries import get_conversation_history, add_message, get_document_analysis
+from api.db.queries import get_conversation_history, add_message, get_document_analysis, get_user_profile
 from api.services.fill_pdf_service import fill_pdf_service
 import json
 
@@ -292,7 +292,15 @@ async def generate_response(request: dict, session_id: str) -> str:
                     
                     if current_state['remaining_fields']:
                         next_field = current_state['remaining_fields'].pop(0)
-                        final_response = f"Proszę podać {next_field['field_name']} ({next_field['required_value']}):"
+                        # Przed pytaniem o pole - sprawdź czy dane istnieją w profilu
+                        async with SessionLocal() as session:
+                            profile = await get_user_profile(session, user_id)
+                        
+                        if next_field['field_name'].lower() in profile.personal_data:
+                            current_state['collected_data'][next_field['field_name']] = profile.personal_data[next_field['field_name'].lower()]
+                            continue  # Pomijaj pytanie o znane dane
+                        else:
+                            final_response = f"Proszę podać {next_field['field_name']}..."
                     else:
                         # Generuj PDF gdy wszystkie dane są zebrane
                         filled_pdf = await fill_pdf_service(

@@ -13,3 +13,4 @@ sqlalchemy
 psycopg2-binary
 asyncpg
 firebase_admin
+reportlab

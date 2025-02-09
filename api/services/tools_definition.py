@@ -122,27 +122,6 @@ tools_definition = [
     {
         "type": "function",
         "function": {
-            "name": "collect_form_data",
-            "description": "fills in the form based on the entered personal data",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "field_name": {
-                        "type": "string",
-                        "description": "Nazwa pola do wypełnienia"
-                    },
-                    "current_data": {
-                        "type": "object",
-                        "description": "Aktualnie zebrane dane w formacie JSON"
-                    }
-                },
-                "required": ["field_name", "current_data"]
-            }
-        }
-    },
-    {
-        "type": "function",
-        "function": {
             "name": "dynamic_form_filler",
             "description": "Kolekcjonuje dane do dynamicznego wypełniania formularza PDF na podstawie analizy dokumentu",
             "parameters": {

@@ -30,4 +30,4 @@ async def fill_pdf_service(template_path: str, fields_data: dict) -> bytes:
     
     output = BytesIO()
     writer.write(output)
-    return output.getvalue() 
+    return output.getvalue()                                                                                                    
