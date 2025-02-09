@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Request, HTTPException, UploadFile, Depends 
 from typing import List
 from sqlalchemy.ext.asyncio import AsyncSession
-from api.db.session import get_async_session
+from api.db.database import get_async_session
 from api.services.openai_service import process_image_with_grok, process_document_with_text_model, generate_response, generate_initial_message
 from api.utils.image_utils import encode_image_to_base64, convert_pdf_to_images, pil_image_to_base64
 from api.utils.firebase_utils import get_current_user_uid, get_user_name_from_firebase

@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from api.routes import router
-from api.db.session import init_db
+from api.db.database import init_db
 from api.middleware.firebase_middleware import FirebaseAuthMiddleware
 
 app = FastAPI(

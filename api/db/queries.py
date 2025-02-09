@@ -1,7 +1,7 @@
 from sqlalchemy.future import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from datetime import datetime
-from api.db.models import ConversationMessage, DocumentAnalysis
+from api.db.models import ConversationMessage, DocumentAnalysis, UserProfile
 
 async def get_conversation_history(session: AsyncSession, user_id: str, session_id: str):
     """
@@ -100,3 +100,10 @@ async def save_document_analysis(session, session_id: str, document_path: str, f
     )
     session.add(analysis)
     await session.commit()
+
+async def get_user_profile(session: AsyncSession, user_id: str):
+    result = await session.execute(
+        select(UserProfile)
+        .where(UserProfile.user_id == user_id)
+    )
+    return result.scalars().first()

@@ -1,6 +1,7 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime
+from sqlalchemy import Column, Integer, String, Text, DateTime, JSON
 from sqlalchemy.orm import declarative_base
 from datetime import datetime
+import json
 
 Base = declarative_base()
 
@@ -19,3 +20,8 @@ class DocumentAnalysis(Base):
     session_id = Column(String, primary_key=True)
     document_path = Column(String)
     fields = Column(Text)  # JSON jako string
+
+class UserProfile(Base):
+    __tablename__ = "user_profiles"
+    user_id = Column(String, primary_key=True)
+    personal_data = Column(JSON)  # Przechowuje dane typu: {"full_name": "Jan Kowalski", "address": "...", ...}

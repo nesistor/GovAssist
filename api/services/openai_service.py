@@ -4,7 +4,7 @@ from openai import OpenAI
 from fastapi import HTTPException
 import os
 from api.services.tools_definition import switch_prompt, get_service_links_us, tools_definition
-from api.db.session import SessionLocal
+from api.db.database import SessionLocal
 from api.db.queries import get_conversation_history, add_message, get_document_analysis
 from api.services.fill_pdf_service import fill_pdf_service
 import json
