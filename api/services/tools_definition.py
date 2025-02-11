@@ -102,13 +102,13 @@ tools_definition = [
         "type": "function",
         "function": {
             "name": "retrieve_and_answer",
-            "description": "Wyszukuje dokumenty i generuje odpowiedź na podstawie RAG.",
+            "description": "Searches for documents and generates a response based on the RAG.",
             "parameters": {
                 "type": "object",
                 "properties": {
                     "query": {
                         "type": "string",
-                        "description": "Zapytanie użytkownika dotyczące procedur lub regulacji ministerstwa."
+                        "description": "A user's query regarding the ministry's procedures or regulations."
                     },
                     "ministry": {
                         "type": "string",
@@ -123,14 +123,15 @@ tools_definition = [
         "type": "function",
         "function": {
             "name": "dynamic_form_filler",
-            "description": "Kolekcjonuje dane do dynamicznego wypełniania formularza PDF na podstawie analizy dokumentu",
+            "description": "Collects data to dynamically fill out a PDF form based on document analysis",
             "parameters": {
                 "type": "object",
                 "properties": {
                     "current_step": {
                         "type": "object",
-                        "description": "Aktualny stan wypełniania formularza",
+                        "description": "Current status of filling in the form",
                         "properties": {
+                            "document_name": {"type": "string", "description": "Nazwa wybranego dokumentu np. 'Formularz VAT-7'"},
                             "current_field": {"type": "string"},
                             "collected_data": {"type": "object"},
                             "remaining_fields": {"type": "array"}

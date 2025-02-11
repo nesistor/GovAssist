@@ -8,6 +8,7 @@ from pydantic import BaseModel
 from typing import List
 from api.db.queries import save_document_analysis
 from api.db.database import SessionLocal
+from api.firebase.firebase_service import DocumentManager
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +32,7 @@ class Field(BaseModel):
 class DocumentAnalysisResponse(BaseModel):
     fields: List[Field]
 
-async def analyze_document_with_vision(base64_image: str, session_id: str) -> dict:
+async def analyze_document_with_vision(base64_image: str, session_id: str, file_data: bytes) -> dict:
     """
     Analyzes a document from an image and extracts form fields, their exact location, and required data.
 
@@ -139,12 +140,13 @@ async def analyze_document_with_vision(base64_image: str, session_id: str) -> di
             
         # Zapisz wyniki do bazy
         async with SessionLocal() as session:
-            await save_document_analysis(
-                session=session,
-                session_id=session_id,
-                document_path=f"documents/{session_id}.pdf",
-                fields=json.dumps(response_data['fields'])
-            )
+            analysis_data = {
+                "fields": [field.dict() for field in fields],
+                "document_id": session_id
+            }
+            
+            # Zapisz do Firebase
+            await DocumentManager.save_document(session_id, file_data, analysis_data)
             
         return DocumentAnalysisResponse(fields=fields)
     

@@ -8,6 +8,7 @@ from api.db.database import SessionLocal
 from api.db.queries import get_conversation_history, add_message, get_document_analysis, get_user_profile
 from api.services.fill_pdf_service import fill_pdf_service
 import json
+from api.firebase.firebase_service import DocumentManager
 
 # API keys
 XAI_API_KEY = os.getenv("XAI_API_KEY")
@@ -257,11 +258,15 @@ async def generate_response(request: dict, session_id: str) -> str:
 
         if tool_calls:
             logger.info(f"Processing {len(tool_calls)} tool calls")
+            # Nowe logowanie użytych narzędzi
+            tool_names = [tool_call.function.name for tool_call in tool_calls]
+            logger.info(f"Użyte narzędzia w żądaniu - Sesja: {session_id}, Użytkownik: {user_id}, Narzędzia: {tool_names}")
             
             for tool_call in tool_calls:
                 tool_name = tool_call.function.name
                 tool_args = json.loads(tool_call.function.arguments)
-                logger.debug(f"Tool call: {tool_name}, Args: {tool_args}")
+                # Rozszerzone logowanie szczegółów
+                logger.debug(f"Przetwarzanie narzędzia - Sesja: {session_id}, Użytkownik: {user_id}, Narzędzie: {tool_name}, Argumenty: {tool_args}")
 
                 # Obsługa istniejących narzędzi
                 if tool_name == "retrieve_and_answer":
@@ -276,42 +281,35 @@ async def generate_response(request: dict, session_id: str) -> str:
                         
                 # Nowa funkcjonalność: dynamiczne wypełnianie formularza
                 elif tool_name == "dynamic_form_filler":
-                    current_state = tool_args.get('current_step', {})
+                    current_step = tool_args.get("current_step", {})
                     
-                    # Pobierz strukturę formularza z bazy danych
-                    async with SessionLocal() as session:
-                        analysis = await get_document_analysis(session, session_id)
-                        form_structure = json.loads(analysis.fields) if analysis else []
+                    # Pobierz analizę dokumentu z Firebase
+                    analysis = await DocumentManager.get_document_analysis(session_id)
                     
-                    required_fields = [f for f in form_structure if f.get('is_required')]
-                    
-                    # Inicjalizacja stanu jeśli potrzeba
-                    if not current_state.get('remaining_fields'):
-                        current_state['remaining_fields'] = required_fields.copy()
-                        current_state['collected_data'] = {}
-                    
-                    if current_state['remaining_fields']:
-                        next_field = current_state['remaining_fields'].pop(0)
-                        # Przed pytaniem o pole - sprawdź czy dane istnieją w profilu
-                        async with SessionLocal() as session:
-                            profile = await get_user_profile(session, user_id)
+                    if not analysis:
+                        return "Dokument nie został jeszcze przeanalizowany"
                         
-                        if next_field['field_name'].lower() in profile.personal_data:
-                            current_state['collected_data'][next_field['field_name']] = profile.personal_data[next_field['field_name'].lower()]
-                            continue  # Pomijaj pytanie o znane dane
-                        else:
-                            final_response = f"Proszę podać {next_field['field_name']}..."
+                    if not current_step.get("document_id"):
+                        # Inicjalizacja procesu
+                        current_step = {
+                            "document_id": session_id,
+                            "remaining_fields": [field["field_name"] for field in analysis["fields"] if field["is_required"]],
+                            "collected_data": {},
+                            "current_field": None
+                        }
+                        
+                    if current_step["remaining_fields"]:
+                        current_field = current_step["remaining_fields"][0]
+                        current_step["current_field"] = current_field
+                        return f"Proszę podać wartość dla pola: {current_field}"
+                        
                     else:
-                        # Generuj PDF gdy wszystkie dane są zebrane
-                        filled_pdf = await fill_pdf_service(
-                            analysis.document_path,
-                            current_state['collected_data']
-                        )
-                        download_url = generate_download_link(filled_pdf)
-                        final_response = f"Formularz gotowy! Pobierz tutaj: {download_url}"
-                        
+                        # Wypełnij PDF gdy wszystkie dane są zebrane
+                        pdf_url = await fill_pdf_dynamically(session_id, current_step["collected_data"])
+                        return f"Dokument został wypełniony: {pdf_url}"
+                    
                 else:
-                    logger.warning(f"Unknown tool called: {tool_name}")
+                    logger.warning(f"Nieznane narzędzie wywołane - Sesja: {session_id}, Użytkownik: {user_id}, Narzędzie: {tool_name}")
                     continue
 
         # Zachowaj istniejącą logikę dla odpowiedzi
